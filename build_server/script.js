@@ -24,7 +24,7 @@ const kafka = new Kafka({
     clientId: `build-server-${DEPLOYMENT_ID}`,
     brokers: [process.env.KAFKA_BROKER],
     ssl: {
-        ca: [fs.readFileSync(path.join(__dirname, "kajka.pem"), "utf-8")],
+        ca: [fs.readFileSync(path.join(__dirname, "kafka.pem"), "utf-8")],
     },
     sasl: {
         mechanism: "plain",
