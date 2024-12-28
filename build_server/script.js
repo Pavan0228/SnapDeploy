@@ -19,6 +19,7 @@ const s3Client = new S3Client({
 });
 
 const PROJECT_ID = process.env.PROJECT_ID
+const DEPLOYMENT_ID = process.env.DEPLOYMENT_ID
 
 function publishMessage(log) {
     publisher.publish(`logs:${PROJECT_ID}`, JSON.stringify({ log }))
@@ -113,6 +114,7 @@ async function init() {
                     console.log('Done...')
                     publishMessage('Upload process completed successfully')
                     resolve()
+                    process.exit(0)
                 } catch (error) {
                     console.error('Upload error:', error)
                     publishMessage(`Upload process failed: ${error.message}`)
@@ -130,5 +132,5 @@ async function init() {
 init().catch(error => {
     console.error('Fatal error:', error)
     publishMessage(`Script terminated with error: ${error.message}`)
-    process.exit(1)
+    process.exit(0)
 })
