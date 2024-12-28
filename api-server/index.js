@@ -1,15 +1,14 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const { generateSlug } = require("random-word-slugs");
-const {
-    ECSClient,
-    RunTaskCommand,
-    DescribeTasksCommand,
-} = require("@aws-sdk/client-ecs");
-const { Server } = require("socket.io");
-const Redis = require("ioredis");
+const { ECSClient, RunTaskCommand } = require("@aws-sdk/client-ecs");
 const { z } = require("zod");
 const { PrismaClient } = require("@prisma/client");
+const { createClient } = require("@clickhouse/client");
+const { Kafka } = require("kafkajs");
+const { v4: uuidv4 } = require("uuid");
+const fs = require("fs");
+const path = require("path");
 
 dotenv.config({
     path: "./.env",
@@ -35,104 +34,33 @@ const config = {
 // Prisma Client Setup
 const prisma = new PrismaClient();
 
-// Redis Setup
-const subscriber = new Redis(process.env.REDIS_URL);
-
-// Socket.io Setup
-const io = new Server({ cors: { origin: "*" } });
-
-io.on("connection", (socket) => {
-    socket.on("subscribe", (channel) => {
-        socket.join(channel);
-        socket.emit(
-            "message",
-            JSON.stringify({
-                timestamp: new Date().toISOString(),
-                status: "connected",
-                message: `Joined ${channel}`,
-            })
-        );
-    });
+// clickhouse Setup
+const client = createClient({
+    host: process.env.CLICKHOUSE_HOST,
+    database: "default",
+    username: process.env.CLICKHOUSE_USER,
+    password: process.env.CLICKHOUSE_PASSWORD,
 });
 
-io.listen(9001, () => {
-    console.log("Socket server running on port 9001");
+// Kafka Setup
+const kafka = new Kafka({
+    clientId: `api-server`,
+    brokers: [process.env.KAFKA_BROKER],
+    ssl: {
+        ca: [fs.readFileSync(path.join(__dirname, "kafka.pem"), "utf-8")],
+    },
+    sasl: {
+        mechanism: "plain",
+        username: process.env.KAFKA_USERNAME,
+        password: process.env.KAFKA_PASSWORD,
+    },
 });
+
+const consumer = kafka.consumer({ groupId: "api-server-logs-consumer" });
 
 // Express Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Task Status Monitoring
-async function waitForTaskCompletion(taskArn, projectSlug) {
-    let lastStatus = "";
-
-    while (true) {
-        try {
-            const describeCommand = new DescribeTasksCommand({
-                cluster: config.CLUSTER,
-                tasks: [taskArn],
-            });
-
-            const { tasks } = await ecsClient.send(describeCommand);
-
-            if (!tasks || tasks.length === 0) {
-                throw new Error("Task not found");
-            }
-
-            const task = tasks[0];
-
-            // Only emit if status has changed
-            if (task.lastStatus !== lastStatus) {
-                lastStatus = task.lastStatus;
-                io.to(`logs:${projectSlug}`).emit(
-                    "message",
-                    JSON.stringify({
-                        timestamp: new Date().toISOString(),
-                        status: task.lastStatus,
-                        projectId: projectSlug,
-                    })
-                );
-            }
-
-            // Check container exit code when task is stopped
-            if (task.lastStatus === "STOPPED") {
-                const containerExitCode = task.containers[0].exitCode;
-
-                if (containerExitCode !== 0 || task.stoppedReason) {
-                    throw new Error(
-                        `Task stopped: ${task.stoppedReason || "Unknown error"}`
-                    );
-                }
-
-                io.to(`logs:${projectSlug}`).emit(
-                    "message",
-                    JSON.stringify({
-                        timestamp: new Date().toISOString(),
-                        status: "COMPLETED",
-                        projectId: projectSlug,
-                    })
-                );
-
-                return task;
-            }
-
-            // Wait before next check
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-        } catch (error) {
-            io.to(`logs:${projectSlug}`).emit(
-                "message",
-                JSON.stringify({
-                    timestamp: new Date().toISOString(),
-                    status: "ERROR",
-                    error: error.message,
-                    projectId: projectSlug,
-                })
-            );
-            throw error;
-        }
-    }
-}
 
 // Routes
 app.get("/", (req, res) => {
@@ -140,12 +68,12 @@ app.get("/", (req, res) => {
 });
 
 app.post("/project", async (req, res) => {
-    z.object({
+    const projectSchema = z.object({
         name: z.string(),
         gitURL: z.string(),
     });
 
-    const safeParse = schema.safeParse(req.body);
+    const safeParse = projectSchema.safeParse(req.body);
 
     if (!safeParse.success) {
         return res.status(400).json({
@@ -161,7 +89,7 @@ app.post("/project", async (req, res) => {
             data: {
                 name,
                 gitURL,
-                subDomain: generateSlug(),
+                subdomain: generateSlug(),
             },
         });
 
@@ -197,7 +125,6 @@ app.post("/deploy", async (req, res) => {
         data: {
             project: { connect: { id: projectId } },
             status: "QUEUED",
-
         },
     });
 
@@ -234,7 +161,7 @@ app.post("/deploy", async (req, res) => {
                             {
                                 name: "DEPLOYMENT_ID",
                                 value: deployment.id.toString(),
-                            }
+                            },
                         ],
                     },
                 ],
@@ -247,22 +174,23 @@ app.post("/deploy", async (req, res) => {
             throw new Error("Failed to start task");
         }
 
-        const taskArn = tasks[0].taskArn;
-
-        // Start monitoring the task
-        waitForTaskCompletion(taskArn, projectSlug).catch((error) => {
-            console.error(`Task failed: ${error.message}`);
+        // Update deployment status to STARTED
+        await prisma.deployment.update({
+            where: { id: deployment.id },
+            data: { status: "STARTED" }
         });
 
-        // Return immediate response
         return res.status(201).json({
-            projectSlug,
-            url: `http://${projectSlug}.localhost:8000`,
-            taskArn,
             status: "STARTED",
+            data: { deploymentId: deployment.id },
+            message: "Deployment started",
         });
     } catch (error) {
-        console.error("Failed to create project:", error);
+        console.error("Failed to start deployment:", error);
+        await prisma.deployment.update({
+            where: { id: deployment.id },
+            data: { status: "FAILED", error: error.message }
+        });
         return res.status(500).json({
             error: "Failed to start build task",
             message: error.message,
@@ -270,34 +198,62 @@ app.post("/deploy", async (req, res) => {
     }
 });
 
-// Redis subscription for build logs
-async function initRedisSubscribe() {
+app.get('/logs/:id', async (req, res) => {
+    const id = req.params.id;
+    const logs = await client.query({
+        query: `SELECT event_id, deployment_id, log, timestamp from log_events where deployment_id = {deployment_id:String}`,
+        query_params: {
+            deployment_id: id
+        },
+        format: 'JSONEachRow'
+    });
+
+    const rawLogs = await logs.json();
+
+    return res.json({ logs: rawLogs });
+});
+
+async function initKafkaConsumer() {
     try {
-        console.log("Subscribing to build logs...");
-        await subscriber.psubscribe("logs:*");
+        await consumer.connect();
+        await consumer.subscribe({ topic: "container-logs" });
 
-        subscriber.on("pmessage", (pattern, channel, message) => {
-            try {
-                // Validate message is JSON before forwarding
-                const parsed = JSON.parse(message);
-                io.to(channel).emit("message", message);
-            } catch (error) {
-                console.error("Invalid message format:", error);
-            }
-        });
+        await consumer.run({
+            autoCommit: false,
+            eachBatch: async ({
+                batch,
+                heartbeat,
+                commitOffsetsIfNecessary,
+                resolveOffset,
+            }) => {
+                const { messages } = batch;
+                console.log("Received messages length", messages.length);
 
-        subscriber.on("error", (error) => {
-            console.error("Redis subscription error:", error);
+                for (const message of messages) {
+                    const stringMessage = message.value.toString();
+                    const { DEPLOYMENT_ID, log } = JSON.parse(stringMessage);
+                    try {
+                        const { query_id } = await client.insert({
+                            table: 'log_events',
+                            values: [{ event_id: uuidv4(), deployment_id: DEPLOYMENT_ID, log }],
+                            format: 'JSONEachRow'
+                        });
+                        resolveOffset(message.offset);
+                        await commitOffsetsIfNecessary(message.offset);
+                        await heartbeat();
+                    } catch (err) {
+                        console.log(err);
+                    }    
+                }
+            },
         });
     } catch (error) {
-        console.error("Failed to initialize Redis subscription:", error);
-        // Attempt to reconnect after delay
-        setTimeout(initRedisSubscribe, 5000);
+        console.error("Failed to connect to Kafka:", error);
+        process.exit(1);
     }
 }
 
-// Initialize Redis subscription
-initRedisSubscribe();
+initKafkaConsumer();
 
 // Error handling
 process.on("unhandledRejection", (reason, promise) => {
@@ -312,3 +268,5 @@ process.on("uncaughtException", (error) => {
 app.listen(port, () => {
     console.log(`Build server running on port ${port}`);
 });
+
+module.exports = prisma;
