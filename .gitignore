@@ -12,6 +12,7 @@ logs
 *.pid
 *.seed
 *.pid.lock
+*.pem
 
 # Optional npm cache directory
 .npm
