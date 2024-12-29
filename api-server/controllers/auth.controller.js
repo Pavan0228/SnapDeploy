@@ -48,7 +48,8 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // Generate tokens after successful registration
-    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id);
+    const { accessToken, refreshToken } =
+        await generateAccessTokenAndRefreshToken(user._id);
 
     // Remove sensitive fields before sending response
     const userData = user.toObject();
@@ -99,7 +100,8 @@ const loginUser = asyncHandler(async (req, res) => {
         res.status(401).json({ message: "Invalid password" });
     }
 
-    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id);
+    const { accessToken, refreshToken } =
+        await generateAccessTokenAndRefreshToken(user._id);
 
     const userData = user.toObject();
     delete userData.password;
@@ -148,4 +150,18 @@ const logoutUser = asyncHandler(async (req, res) => {
         });
 });
 
-export { registerUser, loginUser, logoutUser };
+const getCurrentUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).select(
+        "-password -refreshToken"
+    );
+    res.status(200).json(user);
+});
+
+const getUserById = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.userId).select(
+        "-password -refreshToken"
+    );
+    res.status(200).json(user);
+});
+
+export { registerUser, loginUser, logoutUser, getCurrentUser, getUserById };
