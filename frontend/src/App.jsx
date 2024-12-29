@@ -5,6 +5,9 @@ import Layout from './components/Layout';
 import AuthForms from './pages/AuthForms';
 import Cookies from "js-cookie";
 import { Toaster } from 'react-hot-toast';
+import { ProjectDetail } from './pages/ProjectDetail';
+import { ProjectList } from './pages/ProjectList';
+import CreateProject from './pages/CreateProject';
 
 
 
@@ -59,9 +62,11 @@ const App = () => {
         }>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<div>Dashboard Content</div>} />
-          <Route path="hosting" element={<div>Hosting Content</div>} />
-          <Route path="project" element={<div>Clients Content</div>} />
-          <Route path="profile" element={<div>Settings Content</div>} />
+          <Route path="create-project" element={<CreateProject />} />
+          <Route path="projects" element={<ProjectList />}/>
+          <Route path="projects/:projectId" element={<ProjectDetail />} />
+          <Route path="profile" element={<div>Profile Content</div>} />
+          <Route path="help-support" element={<div>Help Content</div>} />
         </Route>
 
         {/* Catch-all route */}

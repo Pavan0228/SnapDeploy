@@ -4,10 +4,11 @@ import {
     X,
     ChevronLeft,
     ChevronRight,
-    Home,
-    Server,
-    Users,
-    Search,
+    LayoutDashboard,
+    PlusCircle,
+    UserCircle,
+    LifeBuoy,
+    FolderGit2
 } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import Cookies from "js-cookie";
@@ -17,15 +18,16 @@ import { toast } from "react-hot-toast";
 const Layout = () => {
     const [isExpanded, setIsExpanded] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const navigate = useNavigate();
 
     const menuItems = [
-        { icon: Home, label: "Dashboard", path: "/dashboard" },
-        { icon: Server, label: "Hosting", path: "/hosting" },
-        { icon: Users, label: "Project", path: "/project" },
-        { icon: Users, label: "Profile", path: "/profile" },
+        { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
+        { icon: PlusCircle, label: "New Project", path: "/create-project" },
+        { icon: FolderGit2, label: "My Projects", path: "/projects" },
+        { icon: UserCircle, label: "My Account", path: "/profile" },
+        { icon: LifeBuoy, label: "Support Center", path: "/help-support" },
     ];
+    
 
     const handleLogout = () => {
         toast.success("Logging out...",
@@ -83,18 +85,6 @@ const Layout = () => {
                                 </Link>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                {/* Search Bar - Responsive */}
-                <div className={`px-4 py-3 border-t border-slate-200/50 ${isSearchOpen ? 'block' : 'hidden'}`}>
-                    <div className="relative w-full max-w-2xl mx-auto">
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            className="w-full px-4 py-2 pl-10 bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all duration-300"
-                        />
-                        <Search className="absolute left-3 top-2.5 text-slate-400" size={20} />
                     </div>
                 </div>
             </nav>

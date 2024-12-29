@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import axios from "axios";
 import { BASE_API_SERVER_URL } from "../constant/url";
 
@@ -76,6 +76,7 @@ const AuthForms = () => {
 
             if (data.accessToken) {
                 Cookies.set("accessToken", data.accessToken, { expires: 1 });
+                localStorage.setItem("userId", data.user._id);
             }
 
             toast.success(
