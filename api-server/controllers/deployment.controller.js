@@ -5,7 +5,12 @@ import { startECSTask } from "../services/ecs.service.js";
 export const createDeployment = async (req, res) => {
     const { projectId } = req.body;
 
-    const project = await Project.findById(projectId);
+    const userId = req.user._id;
+
+    const project = await Project.findOne({
+        _id: projectId,
+        owner: userId,
+    });
 
     if (!project) {
         return res.status(404).json({
