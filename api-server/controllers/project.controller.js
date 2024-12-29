@@ -24,6 +24,7 @@ export const createProject = async (req, res) => {
             name,
             gitURL,
             subdomain: generateSlug(),
+            owner: req.user._id,
         });
         
         await project.save();
@@ -46,7 +47,7 @@ export const getUserAllProjects = async (req, res) => {
     const userId = req.user._id;
 
     try {
-        const projects = await Project.find({ owner: userId });
+        const projects = await Project.find({ owner: userId }).sort({ createdAt: -1 });
 
         return res.status(200).json({
             status: "success",

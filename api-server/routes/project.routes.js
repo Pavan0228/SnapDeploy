@@ -9,6 +9,6 @@ import { verifyJWT } from "../middlewares/auth.middlewares.js";
 const router = Router();
 router.post("/", verifyJWT, createProject);
 router.get("/", verifyJWT, getUserAllProjects);
-router.get("/:id", verifyJWT, getProjectById);
+router.get("/:projectId", verifyJWT, getProjectById);
 
 export default router;
