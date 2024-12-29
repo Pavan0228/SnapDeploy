@@ -35,14 +35,14 @@ const kafka = new Kafka({
 
 const producer = kafka.producer();
 
-async function publishMessage(log) {
+async function publishMessage(log, status = "info") {
     try {
         await producer.send({
             topic: `container-logs`,
             messages: [
                 {
                     key: "log",
-                    value: JSON.stringify({ PROJECT_ID, DEPLOYMENT_ID, log }),
+                    value: JSON.stringify({ PROJECT_ID, DEPLOYMENT_ID, log, status }),
                 },
             ],
         });
@@ -68,26 +68,26 @@ function executeBuild(outDirPath) {
             const message = data.toString().trim();
             console.log(message);
             // Using void to handle the promise without awaiting
-            void publishMessage(`Build output: ${message}`);
+            void publishMessage(`Build output: ${message}`,'info');
         });
 
         buildProcess.stderr.on("data", (data) => {
             const error = data.toString().trim();
             console.error("Error:", error);
-            void publishMessage(`Build error: ${error}`);
+            void publishMessage(`Build error: ${error}`, 'error');
         });
 
         buildProcess.on("error", (error) => {
             console.error("Process error:", error);
-            void publishMessage(`Process error: ${error.message}`);
+            void publishMessage(`Process error: ${error.message}`, 'error');
             reject(error);
         });
 
         buildProcess.on("close", (code) => {
             if (code !== 0) {
-                const error = new Error(`Build process exited with code ${code}`);
+                const error = new Error(`Build process exited with code ${code}`, 'error');
                 console.error(error.message);
-                void publishMessage(`Build failed with exit code ${code}`);
+                void publishMessage(`Build failed with exit code ${code}`, 'error');
                 reject(error);
                 return;
             }
@@ -135,29 +135,29 @@ async function uploadDistFolder(distFolderPath) {
 async function init() {
     try {
         await producer.connect();
-        await publishMessage("Build process initiated");
+        await publishMessage("Build process initiated" , 'started');
         
         console.log("Executing script.js");
         console.log("Build Started...");
 
         const outDirPath = path.join(__dirname, "output");
         await ensureDirectoryExists(outDirPath);
-        await publishMessage("Starting npm install and build");
+        await publishMessage("Starting npm install and build" , 'running');
         
         await executeBuild(outDirPath);
-        await publishMessage("Build completed successfully");
+        await publishMessage("Build completed successfully", 'success');
         console.log("Build Complete");
 
         const distFolderPath = path.join(__dirname, "output", "dist");
         await uploadDistFolder(distFolderPath);
 
         console.log("Done...");
-        await publishMessage("Upload process completed successfully");
+        await publishMessage("Upload process completed successfully", 'success');
         await producer.disconnect();
         process.exit(0);
     } catch (error) {
         console.error("Script error:", error);
-        await publishMessage(`Fatal script error: ${error.message}`);
+        await publishMessage(`Fatal script error: ${error.message}`, 'error');
         await producer.disconnect();
         process.exit(1);
     }

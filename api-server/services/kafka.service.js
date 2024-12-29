@@ -42,11 +42,11 @@ export async function initKafkaConsumer() {
 
                 for (const message of messages) {
                     const stringMessage = message.value.toString();
-                    const { DEPLOYMENT_ID, log } = JSON.parse(stringMessage);
+                    const { DEPLOYMENT_ID, log, status } = JSON.parse(stringMessage);
                     try {
                         const { query_id } = await clickhouseClient.insert({
                             table: 'log_events',
-                            values: [{ event_id: uuidv4(), deployment_id: DEPLOYMENT_ID, log }],
+                            values: [{ event_id: uuidv4(), deployment_id: DEPLOYMENT_ID, log, status }],
                             format: 'JSONEachRow'
                         });
                         resolveOffset(message.offset);
