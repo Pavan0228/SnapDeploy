@@ -74,20 +74,20 @@ function executeBuild(outDirPath) {
         buildProcess.stderr.on("data", (data) => {
             const error = data.toString().trim();
             console.error("Error:", error);
-            void publishMessage(`Build error: ${error}`, 'error');
+            void publishMessage(`Build error: ${error}`, 'failed');
         });
 
         buildProcess.on("error", (error) => {
             console.error("Process error:", error);
-            void publishMessage(`Process error: ${error.message}`, 'error');
+            void publishMessage(`Process error: ${error.message}`, 'failed');
             reject(error);
         });
 
         buildProcess.on("close", (code) => {
             if (code !== 0) {
-                const error = new Error(`Build process exited with code ${code}`, 'error');
+                const error = new Error(`Build process exited with code ${code}`, 'failed');
                 console.error(error.message);
-                void publishMessage(`Build failed with exit code ${code}`, 'error');
+                void publishMessage(`Build failed with exit code ${code}`, 'failed');
                 reject(error);
                 return;
             }
@@ -152,12 +152,12 @@ async function init() {
         await uploadDistFolder(distFolderPath);
 
         console.log("Done...");
-        await publishMessage("Upload process completed successfully", 'success');
+        await publishMessage("Website is Live 🥳🎉🎊", 'completed');
         await producer.disconnect();
         process.exit(0);
     } catch (error) {
         console.error("Script error:", error);
-        await publishMessage(`Fatal script error: ${error.message}`, 'error');
+        await publishMessage(`Fatal script error: ${error.message}`, 'failed');
         await producer.disconnect();
         process.exit(1);
     }
