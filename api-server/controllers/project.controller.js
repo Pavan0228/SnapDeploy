@@ -5,7 +5,8 @@ import { Project } from "../models/project.model.js";
 export const createProject = async (req, res) => {
     const projectSchema = z.object({
         name: z.string(),
-        gitURL: z.string(),
+        gitURL: z.string().url().regex(/^https?:\/\/github\.com\/[\w-]+\/[\w-]+$/),
+        slug: z.string().optional(),
     });
 
     const safeParse = projectSchema.safeParse(req.body);
@@ -17,13 +18,23 @@ export const createProject = async (req, res) => {
         });
     }
 
-    const { name, gitURL } = safeParse.data;
+    const { name, gitURL, slug } = safeParse.data;
 
     try {
+        const existingProject = await Project.findOne({ owner: req.user._id, gitURL });
+        
+        if (existingProject) {
+            return res.status(201).json({
+                status: "success",
+                data: existingProject,
+            });
+        }
+
+        const subdomain = slug || generateSlug();
         const project = new Project({
             name,
             gitURL,
-            subdomain: generateSlug(),
+            subdomain,
             owner: req.user._id,
         });
         

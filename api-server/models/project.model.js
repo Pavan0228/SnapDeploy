@@ -1,37 +1,38 @@
 import mongoose from "mongoose";
 
-
 const projectScheme = new mongoose.Schema(
     {
         name: {
             type: String,
-            required: true
+            required: true,
         },
         owner: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
+            ref: "User",
         },
         gitURL: {
             type: String,
-            required: true
+            required: true,
         },
         subdomain: {
             type: String,
             required: true,
-            unique: true
+            unique: true,
         },
         customDomain: {
             type: String,
-            required: false
+            required: false,
         },
-        deployments: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Deployment'
-        }]    
+        deployments: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Deployment",
+            },
+        ],
     },
     {
         timestamps: true,
     }
-)
+);
 
 export const Project = mongoose.model("Project", projectScheme);
