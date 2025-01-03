@@ -9,6 +9,7 @@ export function CreateProject() {
     const [formData, setFormData] = React.useState({
         name: "",
         gitURL: "",
+        slug: "",
     });
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState(null);
@@ -92,6 +93,21 @@ export function CreateProject() {
                                 onChange={handleChange}
                                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                 placeholder="https://github.com/username/repository.git"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="gitURL" className="block text-sm font-medium text-gray-700 mb-1">
+                                SubDomain (optional)
+                            </label>
+                            <input
+                                type="text"
+                                id="slug"
+                                name="slug"
+                                required
+                                value={formData.slug}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                placeholder="subDomain"
                             />
                         </div>
                     </div>
