@@ -54,7 +54,6 @@ async function publishMessage(log, status = "info") {
 async function ensureDirectoryExists(dirPath) {
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
-        await publishMessage(`Created directory: ${dirPath}`);
     }
 }
 
@@ -106,17 +105,15 @@ async function uploadDistFolder(distFolderPath) {
     });
 
     console.log("Starting to upload");
-    await publishMessage("Beginning upload process");
+    await publishMessage("Beginning process");
 
     for (const file of distFolderContents) {
         const filePath = path.join(distFolderPath, file);
         if (fs.lstatSync(filePath).isDirectory()) {
-            await publishMessage(`Skipping directory: ${file}`);
             continue;
         }
 
         console.log("uploading", filePath);
-        await publishMessage(`Uploading file: ${file}`);
 
         const s3Key = `__outputs/${PROJECT_ID}/${file}`;
         const command = new PutObjectCommand({
@@ -128,7 +125,6 @@ async function uploadDistFolder(distFolderPath) {
 
         await s3Client.send(command);
         console.log("uploaded", filePath);
-        await publishMessage(`Successfully uploaded: ${file} to ${s3Key}`);
     }
 }
 
