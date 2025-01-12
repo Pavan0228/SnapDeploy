@@ -13,13 +13,16 @@ import CreateProject from './pages/CreateProject';
 
 const App = () => {
   // Simple auth check function
-  const isAuthenticated = () => {
+  const isAuthenticated = async () => {
+    console.log( await Cookies.get('accessToken'));
+    console.log( await Cookies.get('refreshToken'));
     return !!Cookies.get('accessToken');
   };
 
   // Protected Route component
   const ProtectedRoute = ({ children }) => {
     if (!isAuthenticated()) {
+      console.log('Not authenticated');
       return <Navigate to="/auth" />;
     }
     return children;

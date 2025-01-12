@@ -13,18 +13,42 @@ export function ProjectDetail() {
     const [error, setError] = React.useState(null);
     const [isPolling, setIsPolling] = React.useState(false);
     const [previewLoaded, setPreviewLoaded] = React.useState(false);
+    
+    // Define refs before using them
     const pollingInterval = React.useRef(null);
+    const isMounted = React.useRef(true);
 
+    // Define stopPolling before using it in other functions
     const stopPolling = React.useCallback(() => {
-        setIsPolling(false);
         if (pollingInterval.current) {
             clearInterval(pollingInterval.current);
             pollingInterval.current = null;
         }
+        if (isMounted.current) {
+            setIsPolling(false);
+        }
+    }, []);
+
+    const checkCompletionStatus = React.useCallback((logs) => {
+        if (logs.length === 0) return false;
+        
+        // Check the most recent log status
+        const lastLog = logs[0];
+        const terminalStates = ["completed", "failed"];
+        
+        // Stop polling if we hit a terminal state
+        return terminalStates.includes(lastLog.status);
     }, []);
 
     const fetchLogs = React.useCallback(async (deploymentId) => {
+        if (!isMounted.current) return;
+        
         const token = Cookies.get("accessToken");
+        if (!token) {
+            stopPolling();
+            return;
+        }
+
         try {
             const logsRes = await axios.get(
                 `${BASE_API_SERVER_URL}/logs/${deploymentId}`,
@@ -33,29 +57,53 @@ export function ProjectDetail() {
                 }
             );
 
+            if (!isMounted.current) return;
+
             const newLogs = logsRes.data.logs || [];
             const reversedLogs = [...newLogs].reverse();
             
-            // Check for completion conditions before setting logs
-            const lastLog = reversedLogs[0]; // Check the most recent log
-            const shouldStopPolling = 
-                reversedLogs.length >= 25 || 
-                (lastLog && (lastLog.status === "completed" || lastLog.status === "failed"));
+            setLogs(reversedLogs);
 
-            if (shouldStopPolling) {
+            // Check completion status and stop polling if needed
+            if (checkCompletionStatus(reversedLogs)) {
+                console.log("Deployment reached terminal state, stopping polling");
                 stopPolling();
             }
-
-            setLogs(reversedLogs);
         } catch (err) {
             console.error("Error fetching logs:", err);
-            stopPolling();
+            if (isMounted.current) {
+                stopPolling();
+                setError(err.message);
+            }
         }
-    }, [stopPolling]);
+    }, [stopPolling, checkCompletionStatus]);
 
     React.useEffect(() => {
-        const fetchData = async () => {
+        const startPolling = async (deploymentId) => {
+            if (!deploymentId || !isMounted.current) return;
+            
+            // Clear any existing polling interval
+            stopPolling();
+            
+            // Initial fetch
+            await fetchLogs(deploymentId);
+            
+            // Start polling only if we haven't reached a terminal state
+            if (isMounted.current) {
+                setIsPolling(true);
+                pollingInterval.current = setInterval(() => {
+                    fetchLogs(deploymentId);
+                }, 5000);
+            }
+        };
+
+        const fetchProject = async () => {
             const token = Cookies.get("accessToken");
+            if (!token) {
+                setError("No access token found");
+                return;
+            }
+
             try {
                 setLoading(true);
                 const projectRes = await axios.get(
@@ -65,35 +113,34 @@ export function ProjectDetail() {
                     }
                 );
 
+                if (!isMounted.current) return;
+
                 setProject(projectRes.data.data);
 
-                const latestDeploymentId = projectRes.data.data.deployments[
-                    projectRes.data.data.deployments.length - 1
-                ];
+                const deployments = projectRes.data.data.deployments || [];
+                const latestDeploymentId = deployments[deployments.length - 1];
 
                 if (latestDeploymentId) {
-                    // Initial fetch
-                    await fetchLogs(latestDeploymentId);
-                    
-                    // Start polling only if not completed/failed and less than 25 logs
-                    setIsPolling(true);
-                    pollingInterval.current = setInterval(() => {
-                        fetchLogs(latestDeploymentId);
-                    }, 3000);
+                    await startPolling(latestDeploymentId);
                 }
 
                 setError(null);
             } catch (err) {
-                setError(err.message);
+                if (isMounted.current) {
+                    setError(err.message);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted.current) {
+                    setLoading(false);
+                }
             }
         };
 
-        fetchData();
+        isMounted.current = true;
+        fetchProject();
         
-        // Cleanup function
         return () => {
+            isMounted.current = false;
             stopPolling();
         };
     }, [projectId, fetchLogs, stopPolling]);
