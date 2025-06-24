@@ -33,19 +33,28 @@ const kafka = new Kafka({
     },
 });
 
+// Set environment variable to suppress KafkaJS partitioner warning
+process.env.KAFKAJS_NO_PARTITIONER_WARNING = "1";
+
 const producer = kafka.producer();
 
-async function publishMessage(log, status = "info") {
+async function publishMessage(log, status = "running") {
     try {
         await producer.send({
             topic: `container-logs`,
             messages: [
                 {
                     key: "log",
-                    value: JSON.stringify({ PROJECT_ID, DEPLOYMENT_ID, log, status }),
+                    value: JSON.stringify({
+                        PROJECT_ID,
+                        DEPLOYMENT_ID,
+                        log,
+                        status,
+                    }),
                 },
             ],
         });
+        console.log(`[${status.toUpperCase()}] ${log}`);
     } catch (error) {
         console.error("Failed to publish message:", error);
     }
@@ -57,65 +66,217 @@ async function ensureDirectoryExists(dirPath) {
     }
 }
 
+async function cleanupBeforeBuild(outDirPath) {
+    const nodeModulesPath = path.join(outDirPath, "node_modules");
+    const packageLockPath = path.join(outDirPath, "package-lock.json");
+
+    // Remove node_modules and package-lock.json if they exist to ensure clean install
+    if (fs.existsSync(nodeModulesPath)) {
+        await publishMessage("Cleaning previous node_modules...", "running");
+        fs.rmSync(nodeModulesPath, { recursive: true, force: true });
+    }
+
+    if (fs.existsSync(packageLockPath)) {
+        fs.unlinkSync(packageLockPath);
+    }
+}
+
 function executeBuild(outDirPath) {
     return new Promise((resolve, reject) => {
-        const buildProcess = exec(
-            `cd ${outDirPath} && npm install && npm run build`
-        );
+        // Try different npm install strategies to handle ERESOLVE errors
+        const installCommands = [
+            "npm install --legacy-peer-deps",
+            "npm install --force",
+            "npm install",
+        ];
 
-        buildProcess.stdout.on("data", (data) => {
-            const message = data.toString().trim();
-            console.log(message);
-            // Using void to handle the promise without awaiting
-            void publishMessage(`Build output: ${message}`,'info');
-        });
+        let currentCommandIndex = 0;
 
-        buildProcess.stderr.on("data", (data) => {
-            const error = data.toString().trim();
-            console.error("Error:", error);
-            void publishMessage(`Build error: ${error}`, 'failed');
-        });
-
-        buildProcess.on("error", (error) => {
-            console.error("Process error:", error);
-            void publishMessage(`Process error: ${error.message}`, 'failed');
-            reject(error);
-        });
-
-        buildProcess.on("close", (code) => {
-            if (code !== 0) {
-                const error = new Error(`Build process exited with code ${code}`, 'failed');
-                console.error(error.message);
-                void publishMessage(`Build failed with exit code ${code}`, 'failed');
-                reject(error);
+        function tryInstall() {
+            if (currentCommandIndex >= installCommands.length) {
+                reject(new Error("All npm install strategies failed"));
                 return;
             }
-            resolve();
-        });
+
+            const installCommand = installCommands[currentCommandIndex];
+            const buildCommand = `cd ${outDirPath} && ${installCommand} && npm run build`;
+
+            if (currentCommandIndex > 0) {
+                void publishMessage(
+                    `Retrying with different strategy: ${installCommand}`,
+                    "running"
+                );
+            }
+
+            const buildProcess = exec(buildCommand);
+
+            let buildOutput = [];
+            let hasError = false;
+            let installFailed = false;
+
+            buildProcess.stdout.on("data", (data) => {
+                const message = data.toString().trim();
+
+                // Filter out verbose npm output and only show important messages
+                if (shouldLogMessage(message)) {
+                    buildOutput.push(message);
+                    // Only publish significant build messages
+                    if (isSignificantMessage(message)) {
+                        void publishMessage(
+                            formatBuildMessage(message),
+                            "running"
+                        );
+                    }
+                }
+            });
+
+            buildProcess.stderr.on("data", (data) => {
+                const error = data.toString().trim();
+
+                // Check for ERESOLVE errors specifically
+                if (error.includes("ERESOLVE") || error.includes("peer dep")) {
+                    installFailed = true;
+                    void publishMessage(
+                        `Dependency conflict detected, trying alternative strategy...`,
+                        "running"
+                    );
+                } else if (isActualError(error)) {
+                    hasError = true;
+                    void publishMessage(`Build error: ${error}`, "failed");
+                }
+            });
+
+            buildProcess.on("error", (error) => {
+                void publishMessage(
+                    `Build process failed: ${error.message}`,
+                    "failed"
+                );
+                reject(error);
+            });
+
+            buildProcess.on("close", (code) => {
+                if (
+                    code !== 0 &&
+                    installFailed &&
+                    currentCommandIndex < installCommands.length - 1
+                ) {
+                    // Try next install strategy
+                    currentCommandIndex++;
+                    tryInstall();
+                    return;
+                }
+
+                if (code !== 0 || hasError) {
+                    const error = new Error(
+                        `Build failed with exit code ${code}`
+                    );
+                    void publishMessage(
+                        `Build failed with exit code ${code}`,
+                        "failed"
+                    );
+                    reject(error);
+                    return;
+                }
+                resolve();
+            });
+        }
+
+        tryInstall();
     });
+}
+
+// Helper functions to filter build output
+function shouldLogMessage(message) {
+    const skipPatterns = [
+        /^npm WARN/,
+        /^added \d+ packages/,
+        /^found \d+ vulnerabilities/,
+        /^run `npm audit/,
+        /^\s*$/,
+        /^> /,
+    ];
+
+    return !skipPatterns.some((pattern) => pattern.test(message));
+}
+
+function isSignificantMessage(message) {
+    const significantPatterns = [
+        /installing/i,
+        /building/i,
+        /compiling/i,
+        /bundling/i,
+        /optimizing/i,
+        /built/i,
+        /completed/i,
+        /success/i,
+    ];
+
+    return significantPatterns.some((pattern) => pattern.test(message));
+}
+
+function formatBuildMessage(message) {
+    // Clean up and format build messages for better readability
+    if (message.includes("Installing")) return "Installing dependencies...";
+    if (message.includes("Building")) return "Building application...";
+    if (message.includes("Compiling")) return "Compiling source code...";
+    if (message.includes("Bundling")) return "Bundling assets...";
+    if (message.includes("Optimizing")) return "Optimizing build...";
+
+    return message;
+}
+
+function isActualError(error) {
+    const warningPatterns = [
+        /npm WARN/,
+        /warning/i,
+        /deprecated/i,
+        /peer dep/i,
+    ];
+
+    // Don't treat ERESOLVE as a fatal error initially, let the retry logic handle it
+    const retriableErrorPatterns = [
+        /ERESOLVE/,
+        /peer dependency/i,
+        /conflicting peer dependency/i,
+    ];
+
+    const isWarning = warningPatterns.some((pattern) => pattern.test(error));
+    const isRetriable = retriableErrorPatterns.some((pattern) =>
+        pattern.test(error)
+    );
+
+    return !isWarning && !isRetriable;
 }
 
 async function uploadDistFolder(distFolderPath) {
     if (!fs.existsSync(distFolderPath)) {
-        throw new Error("Dist folder not found after build");
+        throw new Error("Build output folder not found");
     }
 
     const distFolderContents = fs.readdirSync(distFolderPath, {
         recursive: true,
     });
 
-    console.log("Starting to upload");
-    await publishMessage("Beginning process");
-
-    for (const file of distFolderContents) {
+    // Filter out directories
+    const files = distFolderContents.filter((file) => {
         const filePath = path.join(distFolderPath, file);
-        if (fs.lstatSync(filePath).isDirectory()) {
-            continue;
-        }
+        return !fs.lstatSync(filePath).isDirectory();
+    });
 
-        console.log("uploading", filePath);
+    if (files.length === 0) {
+        throw new Error("No files found to upload");
+    }
 
+    await publishMessage(
+        `Uploading ${files.length} files to cloud storage...`,
+        "running"
+    );
+
+    let uploadedCount = 0;
+    for (const file of files) {
+        const filePath = path.join(distFolderPath, file);
         const s3Key = `__outputs/${PROJECT_ID}/${file}`;
+
         const command = new PutObjectCommand({
             Bucket: process.env.AWS_BUCKET_NAME,
             Key: s3Key,
@@ -124,36 +285,54 @@ async function uploadDistFolder(distFolderPath) {
         });
 
         await s3Client.send(command);
-        console.log("uploaded", filePath);
+        uploadedCount++;
+
+        // Show progress for larger uploads
+        if (
+            files.length > 5 &&
+            uploadedCount % Math.ceil(files.length / 4) === 0
+        ) {
+            const progress = Math.round((uploadedCount / files.length) * 100);
+            await publishMessage(
+                `Upload progress: ${progress}% (${uploadedCount}/${files.length} files)`,
+                "running"
+            );
+        }
     }
 }
 
 async function init() {
     try {
         await producer.connect();
-        await publishMessage("Build process initiated" , 'started');
-        
-        console.log("Executing script.js");
-        console.log("Build Started...");
+        await publishMessage("Deployment started", "running");
 
         const outDirPath = path.join(__dirname, "output");
         await ensureDirectoryExists(outDirPath);
-        await publishMessage("Starting npm install and build" , 'running');
-        
-        await executeBuild(outDirPath);
-        await publishMessage("Build completed successfully", 'success');
-        console.log("Build Complete");
 
+        // Clean up any previous build artifacts
+        await cleanupBeforeBuild(outDirPath);
+
+        // Build phase
+        await publishMessage(
+            "Installing dependencies and building application...",
+            "running"
+        );
+        await executeBuild(outDirPath);
+        await publishMessage("Build completed successfully", "running");
+
+        // Upload phase
         const distFolderPath = path.join(__dirname, "output", "dist");
         await uploadDistFolder(distFolderPath);
 
-        console.log("Done...");
-        await publishMessage("Website is Live 🥳🎉🎊", 'completed');
+        // Completion
+        await publishMessage(
+            "🎉 Deployment completed! Your website is now live",
+            "completed"
+        );
         await producer.disconnect();
         process.exit(0);
     } catch (error) {
-        console.error("Script error:", error);
-        await publishMessage(`Fatal script error: ${error.message}`, 'failed');
+        await publishMessage(`Deployment failed: ${error.message}`, "failed");
         await producer.disconnect();
         process.exit(1);
     }
