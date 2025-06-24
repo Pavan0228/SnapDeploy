@@ -18,6 +18,7 @@ const projectScheme = new mongoose.Schema(
             type: String,
             required: true,
             unique: true,
+            lowercase: true,
         },
         customDomain: {
             type: String,
