@@ -24,6 +24,17 @@ const projectScheme = new mongoose.Schema(
             type: String,
             required: false,
         },
+        frontendPath: {
+            type: String,
+            required: false,
+            default: "./",
+            trim: true,
+        },
+        envVariables: {
+            type: Map,
+            of: String,
+            default: new Map(),
+        },
         deployments: [
             {
                 type: mongoose.Schema.Types.ObjectId,

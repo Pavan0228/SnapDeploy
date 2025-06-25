@@ -5,8 +5,13 @@ import { Project } from "../models/project.model.js";
 export const createProject = async (req, res) => {
     const projectSchema = z.object({
         name: z.string(),
-        gitURL: z.string().url().regex(/^https?:\/\/github\.com\/[\w-]+\/[\w-]+$/),
+        gitURL: z
+            .string()
+            .url()
+            .regex(/^https?:\/\/github\.com\/[\w-]+\/[\w-]+$/),
         slug: z.string().optional(),
+        frontendPath: z.string().optional().default("./"),
+        envVariables: z.record(z.string()).optional().default({}),
     });
 
     const safeParse = projectSchema.safeParse(req.body);
@@ -18,11 +23,14 @@ export const createProject = async (req, res) => {
         });
     }
 
-    const { name, gitURL, slug } = safeParse.data;
+    const { name, gitURL, slug, frontendPath, envVariables } = safeParse.data;
 
     try {
-        const existingProject = await Project.findOne({ owner: req.user._id, gitURL });
-        
+        const existingProject = await Project.findOne({
+            owner: req.user._id,
+            gitURL,
+        });
+
         if (existingProject) {
             return res.status(201).json({
                 status: "success",
@@ -36,8 +44,10 @@ export const createProject = async (req, res) => {
             gitURL,
             subdomain,
             owner: req.user._id,
+            frontendPath: frontendPath || "./",
+            envVariables: new Map(Object.entries(envVariables || {})),
         });
-        
+
         await project.save();
 
         return res.status(201).json({
@@ -54,32 +64,34 @@ export const createProject = async (req, res) => {
 };
 
 export const getUserAllProjects = async (req, res) => {
-
     const userId = req.user._id;
 
     try {
-        const projects = await Project.find({ owner: userId }).sort({ createdAt: -1 });
+        const projects = await Project.find({ owner: userId }).sort({
+            createdAt: -1,
+        });
 
         return res.status(200).json({
             status: "success",
             data: projects,
         });
-        
     } catch (error) {
         console.error("Failed to get user projects:", error);
         return res.status(500).json({
             error: "Failed to get user projects",
-            message: error.message
+            message: error.message,
         });
-        
     }
-}
+};
 
 export const getProjectById = async (req, res) => {
     const userId = req.user._id;
     const projectId = req.params.projectId;
     try {
-        const project = await Project.findOne({ _id: projectId, owner: userId });
+        const project = await Project.findOne({
+            _id: projectId,
+            owner: userId,
+        });
 
         if (!project) {
             return res.status(404).json({
@@ -91,12 +103,11 @@ export const getProjectById = async (req, res) => {
             status: "success",
             data: project,
         });
-
     } catch (error) {
         console.error("Failed to get project by id:", error);
         return res.status(500).json({
             error: "Failed to get project by id",
-            message: error.message
+            message: error.message,
         });
     }
-}
+};

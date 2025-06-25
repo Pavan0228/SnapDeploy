@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config({
     path: "./.env",
-})
+});
 
 const ecsClient = new ECSClient({
     region: process.env.AWS_REGION,
@@ -52,6 +52,19 @@ export const startECSTask = async (project, deployment) => {
                             name: "DEPLOYMENT_ID",
                             value: deployment._id.toString(),
                         },
+                        {
+                            name: "FRONTEND_PATH",
+                            value: project.frontendPath || "./",
+                        },
+                        // Add user-defined environment variables
+                        ...(project.envVariables
+                            ? Array.from(project.envVariables.entries()).map(
+                                  ([key, value]) => ({
+                                      name: key,
+                                      value: value,
+                                  })
+                              )
+                            : []),
                     ],
                 },
             ],
