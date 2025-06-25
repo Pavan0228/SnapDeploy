@@ -19,6 +19,7 @@ const s3Client = new S3Client({
 
 const PROJECT_ID = process.env.PROJECT_ID;
 const DEPLOYMENT_ID = process.env.DEPLOYMENT_ID;
+const FRONTEND_PATH = process.env.FRONTEND_PATH || "./";
 
 const kafka = new Kafka({
     clientId: `build-server-${DEPLOYMENT_ID}`,
@@ -67,8 +68,9 @@ async function ensureDirectoryExists(dirPath) {
 }
 
 async function cleanupBeforeBuild(outDirPath) {
-    const nodeModulesPath = path.join(outDirPath, "node_modules");
-    const packageLockPath = path.join(outDirPath, "package-lock.json");
+    const buildDir = path.join(outDirPath, FRONTEND_PATH);
+    const nodeModulesPath = path.join(buildDir, "node_modules");
+    const packageLockPath = path.join(buildDir, "package-lock.json");
 
     // Remove node_modules and package-lock.json if they exist to ensure clean install
     if (fs.existsSync(nodeModulesPath)) {
@@ -83,6 +85,29 @@ async function cleanupBeforeBuild(outDirPath) {
 
 function executeBuild(outDirPath) {
     return new Promise((resolve, reject) => {
+        // Determine the actual build directory based on frontend path
+        const buildDir = path.join(outDirPath, FRONTEND_PATH);
+
+        if (!fs.existsSync(buildDir)) {
+            reject(
+                new Error(
+                    `Frontend path '${FRONTEND_PATH}' does not exist in the repository`
+                )
+            );
+            return;
+        }
+
+        // Check if package.json exists in the build directory
+        const packageJsonPath = path.join(buildDir, "package.json");
+        if (!fs.existsSync(packageJsonPath)) {
+            reject(
+                new Error(
+                    `No package.json found in frontend path '${FRONTEND_PATH}'. Please ensure this is the correct path to your frontend code.`
+                )
+            );
+            return;
+        }
+
         // Try different npm install strategies to handle ERESOLVE errors
         const installCommands = [
             "npm install --legacy-peer-deps",
@@ -99,7 +124,7 @@ function executeBuild(outDirPath) {
             }
 
             const installCommand = installCommands[currentCommandIndex];
-            const buildCommand = `cd ${outDirPath} && ${installCommand} && npm run build`;
+            const buildCommand = `cd ${buildDir} && ${installCommand} && npm run build`;
 
             if (currentCommandIndex > 0) {
                 void publishMessage(
@@ -267,11 +292,6 @@ async function uploadDistFolder(distFolderPath) {
         throw new Error("No files found to upload");
     }
 
-    await publishMessage(
-        `Uploading ${files.length} files to cloud storage...`,
-        "running"
-    );
-
     let uploadedCount = 0;
     for (const file of files) {
         const filePath = path.join(distFolderPath, file);
@@ -305,6 +325,10 @@ async function init() {
     try {
         await producer.connect();
         await publishMessage("Deployment started", "running");
+        await publishMessage(
+            `Using frontend path: ${FRONTEND_PATH}`,
+            "running"
+        );
 
         const outDirPath = path.join(__dirname, "output");
         await ensureDirectoryExists(outDirPath);
@@ -320,11 +344,52 @@ async function init() {
         await executeBuild(outDirPath);
         await publishMessage("Build completed successfully", "running");
 
-        // Upload phase
-        const distFolderPath = path.join(__dirname, "output", "dist");
+        // Upload phase - try different common build output directories
+        const buildDir = path.join(__dirname, "output", FRONTEND_PATH);
+        const possibleDistPaths = [
+            path.join(buildDir, "dist"),
+            path.join(buildDir, "build"),
+            path.join(buildDir, "out"),
+            buildDir, // fallback to build directory itself
+        ];
+
+        let distFolderPath = null;
+        for (const possiblePath of possibleDistPaths) {
+            if (fs.existsSync(possiblePath)) {
+                const files = fs.readdirSync(possiblePath);
+                // Check if this directory contains built files (html, js, css, etc.)
+                const hasBuiltFiles = files.some(
+                    (file) =>
+                        file.endsWith(".html") ||
+                        file.endsWith(".js") ||
+                        file.endsWith(".css") ||
+                        fs
+                            .lstatSync(path.join(possiblePath, file))
+                            .isDirectory()
+                );
+                if (hasBuiltFiles) {
+                    distFolderPath = possiblePath;
+                    await publishMessage(
+                        `Found build output in: ${
+                            path.relative(buildDir, possiblePath) || "root"
+                        }`,
+                        "running"
+                    );
+                    break;
+                }
+            }
+        }
+
+        if (!distFolderPath) {
+            throw new Error(
+                "No build output directory found. Checked: dist/, build/, out/, and root directory"
+            );
+        }
+
+        await publishMessage("Uploading files to cloud storage...", "running");
         await uploadDistFolder(distFolderPath);
 
-        // Completion
+        // Completion - This should be the LAST message
         await publishMessage(
             "🎉 Deployment completed! Your website is now live",
             "completed"
