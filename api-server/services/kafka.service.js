@@ -3,10 +3,14 @@ import { v4 as uuidv4 } from "uuid";
 import { readFileSync } from "fs";
 import { insertLogEvent } from "./clickhouse.service.js";
 import dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config({
     path: "./.env",
 });
+
+const pemPath = './kafka.pem';
+fs.writeFileSync(pemPath, process.env.KAFKA_CERT);
 
 const kafka = new Kafka({
     clientId: `api-server`,
