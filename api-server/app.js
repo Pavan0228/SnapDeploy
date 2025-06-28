@@ -40,7 +40,7 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/deployments", deploymentRoutes);
 app.use("/api/v1/logs", logsRoutes);
 app.use("/api/v1", healthRoutes);
-app.use("status", (req, res) => {
+app.use("/status", (req, res) => {
     res.status(200).json({
         status: "ok",
         message: "API is running",
