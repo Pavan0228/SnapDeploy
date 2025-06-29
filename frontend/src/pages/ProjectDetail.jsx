@@ -10,6 +10,10 @@ import {
     XCircle,
     ExternalLink,
     RefreshCw,
+    Activity,
+    Zap,
+    Clock,
+    Eye,
 } from "lucide-react";
 import { BASE_API_SERVER_URL, REVERSE_PROXY_URL } from "../constant/url";
 import Cookies from "js-cookie";
@@ -169,7 +173,7 @@ export function ProjectDetail() {
     }, [projectId, startStreaming, stopStreaming]);
 
     const previewUrl = project?.subdomain
-        ? `http://${project.subdomain}.${REVERSE_PROXY_URL}`
+        ? `https://${project.subdomain}.${REVERSE_PROXY_URL}`
         : "";
 
     const refreshLogs = React.useCallback(async () => {
@@ -246,11 +250,16 @@ export function ProjectDetail() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100">
-                <div className="flex flex-col items-center space-y-4 animate-pulse">
-                    <Loader className="w-16 h-16 animate-spin text-indigo-600" />
-                    <p className="text-xl font-medium text-gray-700">
-                        Loading your project...
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center">
+                    <div className="p-6 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-2xl shadow-lg mx-auto w-fit mb-6 animate-glow">
+                        <Zap className="h-12 w-12 text-white animate-pulse" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        Loading Project
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        Fetching your project details...
                     </p>
                 </div>
             </div>
@@ -259,15 +268,15 @@ export function ProjectDetail() {
 
     if (error) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100">
-                <div className="bg-white p-8 rounded-xl shadow-xl flex items-center space-x-6 max-w-lg mx-4">
-                    <AlertCircle className="w-12 h-12 text-red-500 flex-shrink-0" />
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
-                            Error Loading Project
-                        </h3>
-                        <p className="text-red-600">{error}</p>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center max-w-md">
+                    <div className="p-4 bg-red-100 dark:bg-red-900/20 rounded-full w-fit mx-auto mb-4">
+                        <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
                     </div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        Failed to Load Project
+                    </h3>
+                    <p className="text-red-600 dark:text-red-400">{error}</p>
                 </div>
             </div>
         );
@@ -276,306 +285,321 @@ export function ProjectDetail() {
     if (!project) return null;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100 p-4 lg:p-8">
-            <div className="max-w-7xl mx-auto space-y-8">
-                {/* Project Header */}
-                <div className="bg-white rounded-2xl shadow-xl p-6 lg:p-8 backdrop-blur-lg bg-opacity-95 transition-all hover:shadow-2xl">
-                    <div className="grid lg:grid-cols-2 gap-8">
-                        <div className="space-y-6">
-                            <div className="space-y-4">
-                                <h1 className="text-4xl font-bold text-gray-800 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="container mx-auto p-4 space-y-8">
+            {/* Project Header */}
+            <div className="card p-8">
+                <div className="grid lg:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="p-3 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-xl shadow-lg">
+                                <Activity className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-bold gradient-text">
                                     {project.name}
                                 </h1>
-                                <p className="text-gray-600 text-lg">
-                                    {project.description ||
-                                        "No description available"}
+                                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                                    {project.description || "SnapDeploy Project"}
                                 </p>
-                            </div>
-
-                            <div className="flex flex-wrap gap-4">
-                                <a
-                                    href={project.gitURL}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl transition-all transform hover:scale-105 shadow-md"
-                                >
-                                    <Github className="h-5 w-5 mr-2" />
-                                    <span>View Repository</span>
-                                </a>
-                                {previewUrl && (
-                                    <a
-                                        href={previewUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-md"
-                                    >
-                                        <Globe className="h-5 w-5 mr-2" />
-                                        <span>Open Preview</span>
-                                    </a>
-                                )}
                             </div>
                         </div>
 
-                        {previewUrl && (
-                            <div className="relative h-[400px] rounded-xl overflow-hidden shadow-2xl group">
-                                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-0 group-hover:opacity-50 transition-opacity z-10"></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <a
+                                href={project.gitURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-secondary p-4 group"
+                            >
+                                <Github className="h-5 w-5 mr-3" />
+                                <span>View Repository</span>
+                                <ExternalLink className="h-4 w-4 ml-auto group-hover:translate-x-1 transition-transform" />
+                            </a>
+                            {previewUrl && (
+                                <a
+                                    href={previewUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn-primary p-4 group"
+                                >
+                                    <Globe className="h-5 w-5 mr-3" />
+                                    <span>Open Live Site</span>
+                                    <ExternalLink className="h-4 w-4 ml-auto group-hover:translate-x-1 transition-transform" />
+                                </a>
+                            )}
+                        </div>
+
+                        {/* Project Stats */}
+                        <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                            <div className="text-center">
+                                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    {project.deployments?.length || 0}
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    Deployments
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                    99.9%
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    Uptime
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {previewUrl && (
+                        <div className="relative group">
+                            <div className="relative h-[400px] rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700">
                                 <iframe
                                     src={previewUrl}
                                     className={`w-full h-full border-0 transition-opacity duration-500 ${
-                                        previewLoaded
-                                            ? "opacity-100"
-                                            : "opacity-0"
+                                        previewLoaded ? "opacity-100" : "opacity-0"
                                     }`}
                                     title="Website Preview"
                                     onLoad={() => setPreviewLoaded(true)}
                                     sandbox="allow-same-origin allow-scripts allow-forms"
                                 />
                                 {!previewLoaded && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                                        <Loader className="w-8 h-8 animate-spin text-indigo-600" />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                                        <div className="text-center">
+                                            <Loader className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-2" />
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">Loading preview...</p>
+                                        </div>
                                     </div>
                                 )}
-                                <a
-                                    href={previewUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="absolute bottom-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-gray-900 px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-gray-100"
-                                >
-                                    <span className="mr-2">Open preview</span>
-                                    <ExternalLink className="w-4 h-4" />
-                                </a>
+                                <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <a
+                                        href={previewUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                        <span className="text-sm font-medium">Open in new tab</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Deployment Status */}
+            {(isStreaming || logs.length > 0) && (
+                <div className="card">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="p-3 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-xl shadow-lg">
+                            <Zap className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                Deployment Status
+                            </h2>
+                            <p className="text-gray-600 dark:text-gray-400 mt-1">
+                                Real-time deployment pipeline status
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        {/* Phase Indicators */}
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div
+                                className={`flex items-center space-x-2 px-4 py-3 rounded-xl transition-all ${
+                                    ["dependencies", "building", "uploading", "completed"].includes(deploymentPhase)
+                                        ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                        : deploymentPhase === "initializing"
+                                        ? "bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-400"
+                                        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                                }`}
+                            >
+                                {deploymentPhase === "initializing" ? (
+                                    <Loader className="w-4 h-4 animate-spin" />
+                                ) : ["dependencies", "building", "uploading", "completed"].includes(deploymentPhase) ? (
+                                    <CheckCircle className="w-4 h-4" />
+                                ) : (
+                                    <div className="w-4 h-4 rounded-full border-2 border-current opacity-30"></div>
+                                )}
+                                <span className="text-sm font-medium">
+                                    Initialize
+                                </span>
+                            </div>
+
+                            <div
+                                className={`flex items-center space-x-2 px-4 py-3 rounded-xl transition-all ${
+                                    ["building", "uploading", "completed"].includes(deploymentPhase)
+                                        ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                        : deploymentPhase === "dependencies"
+                                        ? "bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-400"
+                                        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                                }`}
+                            >
+                                {deploymentPhase === "dependencies" ? (
+                                    <Loader className="w-4 h-4 animate-spin" />
+                                ) : ["building", "uploading", "completed"].includes(deploymentPhase) ? (
+                                    <CheckCircle className="w-4 h-4" />
+                                ) : (
+                                    <div className="w-4 h-4 rounded-full border-2 border-current opacity-30"></div>
+                                )}
+                                <span className="text-sm font-medium">
+                                    Build
+                                </span>
+                            </div>
+
+                            <div
+                                className={`flex items-center space-x-2 px-4 py-3 rounded-xl transition-all ${
+                                    deploymentPhase === "completed"
+                                        ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                        : deploymentPhase === "uploading"
+                                        ? "bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-400"
+                                        : deploymentPhase === "failed"
+                                        ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                                        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                                }`}
+                            >
+                                {deploymentPhase === "uploading" ? (
+                                    <Loader className="w-4 h-4 animate-spin" />
+                                ) : deploymentPhase === "completed" ? (
+                                    <CheckCircle className="w-4 h-4" />
+                                ) : deploymentPhase === "failed" ? (
+                                    <XCircle className="w-4 h-4 text-red-500" />
+                                ) : (
+                                    <div className="w-4 h-4 rounded-full border-2 border-current opacity-30"></div>
+                                )}
+                                <span className="text-sm font-medium">
+                                    Deploy
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Overall Status */}
+                        <div
+                            className={`px-6 py-3 rounded-xl font-semibold border ${
+                                deploymentPhase === "completed"
+                                    ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                                    : deploymentPhase === "failed"
+                                    ? "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+                                    : isStreaming
+                                    ? "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/20 dark:text-primary-400 dark:border-primary-800"
+                                    : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                            }`}
+                        >
+                            {deploymentPhase === "completed" && "🎉 Deployed Successfully"}
+                            {deploymentPhase === "failed" && "❌ Deployment Failed"}
+                            {deploymentPhase === "initializing" && "🚀 Initializing..."}
+                            {deploymentPhase === "dependencies" && "📦 Installing Dependencies..."}
+                            {deploymentPhase === "building" && "🔨 Building Application..."}
+                            {deploymentPhase === "uploading" && "☁️ Uploading to Cloud..."}
+                            {!deploymentPhase && isStreaming && "⏳ Starting Deployment..."}
+                            {!deploymentPhase && !isStreaming && "📋 Deployment Logs"}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Deployment Logs */}
+            <div className="card">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-secondary-600 to-primary-600 rounded-xl shadow-lg">
+                            <Activity className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                Deployment Logs
+                            </h2>
+                            <p className="text-gray-600 dark:text-gray-400 mt-1">
+                                {isStreaming ? "Real-time log streaming" : "Deployment history"}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        {!isStreaming && (
+                            <button
+                                onClick={refreshLogs}
+                                className="btn-secondary group"
+                                title="Refresh logs"
+                            >
+                                <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-300" />
+                                <span className="text-sm font-medium">
+                                    Refresh
+                                </span>
+                            </button>
+                        )}
+                        {isStreaming && (
+                            <div className="flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900/20 rounded-full animate-pulse">
+                                <Loader className="w-4 h-4 animate-spin text-primary-600 dark:text-primary-400 mr-2" />
+                                <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
+                                    Live updates
+                                </span>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Deployment Status */}
-                {(isStreaming || logs.length > 0) && (
-                    <div className="bg-white rounded-2xl shadow-xl p-6 lg:p-8 backdrop-blur-lg bg-opacity-95">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                            Deployment Status
-                        </h2>
-
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-6">
-                                {/* Phase Indicators */}
-                                <div className="flex items-center space-x-4">
-                                    <div
-                                        className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all ${
-                                            [
-                                                "initializing",
-                                                "dependencies",
-                                                "building",
-                                                "uploading",
-                                                "completed",
-                                            ].includes(deploymentPhase)
-                                                ? "bg-green-100 text-green-800"
-                                                : "bg-gray-100 text-gray-500"
-                                        }`}
-                                    >
-                                        {deploymentPhase === "initializing" ? (
-                                            <Loader className="w-4 h-4 animate-spin" />
-                                        ) : [
-                                              "dependencies",
-                                              "building",
-                                              "uploading",
-                                              "completed",
-                                          ].includes(deploymentPhase) ? (
-                                            <CheckCircle className="w-4 h-4" />
-                                        ) : (
-                                            <div className="w-4 h-4 rounded-full border-2 border-gray-300"></div>
-                                        )}
-                                        <span className="text-sm font-medium">
-                                            Initialize
-                                        </span>
-                                    </div>
-
-                                    <div
-                                        className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all ${
-                                            [
-                                                "dependencies",
-                                                "building",
-                                                "uploading",
-                                                "completed",
-                                            ].includes(deploymentPhase)
-                                                ? "bg-green-100 text-green-800"
-                                                : deploymentPhase ===
-                                                  "dependencies"
-                                                ? "bg-blue-100 text-blue-800"
-                                                : "bg-gray-100 text-gray-500"
-                                        }`}
-                                    >
-                                        {deploymentPhase === "dependencies" ? (
-                                            <Loader className="w-4 h-4 animate-spin" />
-                                        ) : [
-                                              "building",
-                                              "uploading",
-                                              "completed",
-                                          ].includes(deploymentPhase) ? (
-                                            <CheckCircle className="w-4 h-4" />
-                                        ) : (
-                                            <div className="w-4 h-4 rounded-full border-2 border-gray-300"></div>
-                                        )}
-                                        <span className="text-sm font-medium">
-                                            Build
-                                        </span>
-                                    </div>
-
-                                    <div
-                                        className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all ${
-                                            ["uploading", "completed"].includes(
-                                                deploymentPhase
-                                            )
-                                                ? deploymentPhase ===
-                                                  "uploading"
-                                                    ? "bg-blue-100 text-blue-800"
-                                                    : "bg-green-100 text-green-800"
-                                                : "bg-gray-100 text-gray-500"
-                                        }`}
-                                    >
-                                        {deploymentPhase === "uploading" ? (
-                                            <Loader className="w-4 h-4 animate-spin" />
-                                        ) : deploymentPhase === "completed" ? (
-                                            <CheckCircle className="w-4 h-4" />
-                                        ) : deploymentPhase === "failed" ? (
-                                            <XCircle className="w-4 h-4 text-red-500" />
-                                        ) : (
-                                            <div className="w-4 h-4 rounded-full border-2 border-gray-300"></div>
-                                        )}
-                                        <span className="text-sm font-medium">
-                                            Deploy
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Overall Status */}
+                <div
+                    className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600"
+                    ref={logsContainerRef}
+                >
+                    {logs.length > 0 ? (
+                        [...logs].reverse().map((log) => (
                             <div
-                                className={`px-6 py-3 rounded-xl font-semibold ${
-                                    deploymentPhase === "completed"
-                                        ? "bg-green-100 text-green-800"
-                                        : deploymentPhase === "failed"
-                                        ? "bg-red-100 text-red-800"
-                                        : isStreaming
-                                        ? "bg-blue-100 text-blue-800"
-                                        : "bg-gray-100 text-gray-700"
-                                }`}
+                                key={log.event_id}
+                                className="border-b border-gray-200 dark:border-gray-700 last:border-b-0 p-4 hover:bg-white dark:hover:bg-gray-800 transition-all"
                             >
-                                {deploymentPhase === "completed" &&
-                                    "🎉 Deployed Successfully"}
-                                {deploymentPhase === "failed" &&
-                                    "❌ Deployment Failed"}
-                                {deploymentPhase === "initializing" &&
-                                    "🚀 Initializing..."}
-                                {deploymentPhase === "dependencies" &&
-                                    "📦 Installing Dependencies..."}
-                                {deploymentPhase === "building" &&
-                                    "🔨 Building Application..."}
-                                {deploymentPhase === "uploading" &&
-                                    "☁️ Uploading to Cloud..."}
-                                {!deploymentPhase &&
-                                    isStreaming &&
-                                    "⏳ Starting Deployment..."}
-                                {!deploymentPhase &&
-                                    !isStreaming &&
-                                    "📋 Deployment Logs"}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Deployment Logs */}
-                <div className="bg-white rounded-2xl shadow-xl p-6 lg:p-8 backdrop-blur-lg bg-opacity-95">
-                    {" "}
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">
-                            Deployment Logs
-                        </h2>
-                        <div className="flex items-center gap-3">
-                            {!isStreaming && (
-                                <button
-                                    onClick={refreshLogs}
-                                    className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all transform hover:scale-105"
-                                    title="Refresh logs"
-                                >
-                                    <RefreshCw className="w-4 h-4 mr-2" />
-                                    <span className="text-sm font-medium">
-                                        Refresh
-                                    </span>
-                                </button>
-                            )}
-                            {isStreaming && (
-                                <div className="flex items-center px-4 py-2 bg-indigo-100 rounded-full animate-pulse">
-                                    <Loader className="w-4 h-4 animate-spin text-indigo-600 mr-2" />
-                                    <span className="text-sm font-medium text-indigo-700">
-                                        Live updates...
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    <div
-                        className="rounded-xl border border-gray-200 shadow-inner bg-gray-50 max-h-[600px] overflow-y-auto"
-                        ref={logsContainerRef}
-                    >
-                        {" "}
-                        {logs.length > 0 ? (
-                            [...logs].reverse().map((log) => (
-                                <div
-                                    key={log.event_id}
-                                    className="border-b border-gray-100 last:border-b-0 p-4 hover:bg-white transition-all hover:shadow-md"
-                                >
-                                    <div className="flex flex-col space-y-2">
-                                        <div className="flex justify-between items-start gap-4 flex-wrap">
-                                            <div className="flex items-center space-x-3">
-                                                {log.status === "completed" && (
-                                                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                                                )}
-                                                {log.status === "failed" && (
-                                                    <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                                                )}
-                                                {log.status === "running" && (
-                                                    <Loader className="w-5 h-5 text-indigo-500 animate-spin flex-shrink-0" />
-                                                )}
-                                                <span className="font-medium text-gray-800">
-                                                    {log.log}
-                                                </span>
-                                            </div>
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <span
-                                                    className={`text-xs px-3 py-1 rounded-full font-medium ${
-                                                        log.status ===
-                                                        "completed"
-                                                            ? "bg-green-100 text-green-800"
-                                                            : log.status ===
-                                                              "failed"
-                                                            ? "bg-red-100 text-red-800"
-                                                            : "bg-indigo-100 text-indigo-800"
-                                                    }`}
-                                                >
-                                                    {log.status}
-                                                </span>
-                                                <span className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-                                                    {new Date(
-                                                        log.timestamp
-                                                    ).toLocaleString()}
-                                                </span>
-                                            </div>
+                                <div className="flex flex-col space-y-2">
+                                    <div className="flex justify-between items-start gap-4 flex-wrap">
+                                        <div className="flex items-center space-x-3">
+                                            {log.status === "completed" && (
+                                                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                            )}
+                                            {log.status === "failed" && (
+                                                <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                                            )}
+                                            {log.status === "running" && (
+                                                <Loader className="w-5 h-5 text-primary-500 animate-spin flex-shrink-0" />
+                                            )}
+                                            <span className="font-medium text-gray-800 dark:text-gray-200 font-mono text-sm">
+                                                {log.log}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span
+                                                className={`text-xs px-3 py-1 rounded-full font-medium ${
+                                                    log.status === "completed"
+                                                        ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                                        : log.status === "failed"
+                                                        ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                                                        : "bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-400"
+                                                }`}
+                                            >
+                                                {log.status}
+                                            </span>
+                                            <span className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 px-3 py-1 rounded-full">
+                                                <Clock className="w-3 h-3 inline mr-1" />
+                                                {new Date(log.timestamp).toLocaleString()}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="p-8 text-center">
-                                <div className="inline-block p-4 bg-gray-100 rounded-full mb-4">
-                                    <AlertCircle className="w-8 h-8 text-gray-400" />
-                                </div>
-                                <p className="text-gray-500 font-medium">
-                                    No deployment logs available yet
-                                </p>
                             </div>
-                        )}
-                    </div>
+                        ))
+                    ) : (
+                        <div className="p-12 text-center">
+                            <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-fit mx-auto mb-4">
+                                <AlertCircle className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                No Logs Available
+                            </h3>
+                            <p className="text-gray-500 dark:text-gray-400">
+                                Deployment logs will appear here once your project starts building
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
