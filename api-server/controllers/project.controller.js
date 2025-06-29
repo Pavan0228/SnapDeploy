@@ -111,3 +111,51 @@ export const getProjectById = async (req, res) => {
         });
     }
 };
+
+export const getRecentProjects = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // Get the 3 most recent projects for the user
+        const recentProjects = await Project.find({ owner: userId })
+            .sort({ updatedAt: -1 })
+            .limit(3)
+            .select("name status deployedAt url updatedAt subdomain");
+
+        const formattedProjects = recentProjects.map((project) => ({
+            name: project.name,
+            status: project.status || "Active",
+            deployed: formatTimeAgo(project.deployedAt || project.updatedAt),
+            url:`${project.subdomain}.snapdeploy.me`,
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: formattedProjects,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch recent projects",
+            error: error.message,
+        });
+    }
+};
+
+// Helper function to format time ago
+const formatTimeAgo = (date) => {
+    const now = new Date();
+    const diffInMs = now - new Date(date);
+    const diffInSecs = Math.floor(diffInMs / 1000);
+    const diffInMins = Math.floor(diffInSecs / 60);
+    const diffInHours = Math.floor(diffInMins / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInSecs < 60) return `${diffInSecs} second${diffInSecs !== 1 ? "s" : ""} ago`;
+    if (diffInMins < 60) return `${diffInMins} minute${diffInMins !== 1 ? "s" : ""} ago`;
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours !== 1 ? "s" : ""} ago`;
+    if (diffInDays < 7) return `${diffInDays} day${diffInDays !== 1 ? "s" : ""} ago`;
+    return `${Math.floor(diffInDays / 7)} week${
+        Math.floor(diffInDays / 7) !== 1 ? "s" : ""
+    } ago`;
+};
