@@ -1,22 +1,35 @@
 import React, { useState, useEffect } from "react";
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
+import {
+    Mail,
+    Lock,
+    User,
+    Eye,
+    EyeOff,
+    ArrowRight,
+    Moon,
+    Sun,
+    Zap,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { BASE_API_SERVER_URL } from "../constant/url";
+import { useTheme } from "../contexts/ThemeContext";
 
-const AuthForms = () => {
+const AuthForms = ({ setIsAuthenticated }) => {
     const navigate = useNavigate();
+    const { theme, toggleTheme } = useTheme();
     const [isLogin, setIsLogin] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (Cookies.get("accessToken")) {
+            setIsAuthenticated && setIsAuthenticated(true);
             navigate("/dashboard");
         }
-    }, [navigate]);
+    }, [navigate, setIsAuthenticated]);
 
     const [formData, setFormData] = useState({
         fullName: "",
@@ -61,9 +74,9 @@ const AuthForms = () => {
                 url,
                 isLogin
                     ? {
-                        email: formData.email,
-                        password: formData.password,
-                    }
+                          email: formData.email,
+                          password: formData.password,
+                      }
                     : formData,
                 {
                     headers: {
@@ -77,6 +90,7 @@ const AuthForms = () => {
             if (data.accessToken) {
                 Cookies.set("accessToken", data.accessToken, { expires: 1 });
                 localStorage.setItem("userId", data.user._id);
+                setIsAuthenticated && setIsAuthenticated(true);
             }
 
             toast.success(
@@ -110,92 +124,133 @@ const AuthForms = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-purple-50 to-slate-100 p-4">
-            <div className="w-full max-w-md">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-secondary-50 to-accent-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 bg-pattern p-4 transition-all duration-500">
+            {/* Background decoration */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-primary-400/20 to-secondary-400/20 dark:from-primary-600/10 dark:to-secondary-600/10 rounded-full blur-3xl animate-pulse-gentle"></div>
+                <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-accent-400/20 to-primary-400/20 dark:from-accent-600/10 dark:to-primary-600/10 rounded-full blur-3xl animate-pulse-gentle"></div>
+            </div>
+
+            <div className="relative w-full max-w-md z-10">
+                {/* Theme Toggle */}
+                <div className="absolute top-0 right-0 -mt-4">
+                    <button
+                        onClick={toggleTheme}
+                        className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                    >
+                        {theme === "light" ? (
+                            <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                        ) : (
+                            <Sun className="h-5 w-5 text-yellow-500" />
+                        )}
+                    </button>
+                </div>
+
                 {/* Logo */}
                 <div className="flex items-center justify-center gap-3 mb-8">
-                    <div className="h-12 w-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl shadow-lg shadow-purple-500/30 flex items-center justify-center">
-                        <span className="text-white font-bold text-2xl">B</span>
+                    <div className="relative">
+                        <div className="h-14 w-14 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-2xl shadow-lg shadow-primary-500/30 flex items-center justify-center animate-glow">
+                            <Zap className="h-8 w-8 text-white" />
+                        </div>
+                        <div className="absolute -top-1 -right-1 h-4 w-4 bg-gradient-to-r from-accent-400 to-accent-600 rounded-full animate-bounce-gentle"></div>
                     </div>
-                    <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                        HostingPro
-                    </span>
+                    <div className="text-center">
+                        <span className="text-3xl font-bold gradient-text">
+                            SnapDeploy
+                        </span>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            Deploy at the speed of thought
+                        </p>
+                    </div>
                 </div>
 
                 {/* Form Container */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-purple-500/10 p-6 md:p-8">
-                    <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">
-                        {isLogin ? "Welcome Back!" : "Create Account"}
-                    </h2>
+                <div className="card p-8">
+                    <div className="text-center mb-8">
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                            {isLogin ? "Welcome Back!" : "Join SnapDeploy"}
+                        </h2>
+                        <p className="text-gray-600 dark:text-gray-400">
+                            {isLogin
+                                ? "Sign in to continue your deployment journey"
+                                : "Create your account and start deploying in seconds"}
+                        </p>
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {!isLogin && (
                             <>
-                                <div className="relative">
-                                    <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        name="fullName"
-                                        value={formData.fullName}
-                                        onChange={handleChange}
-                                        placeholder="Full Name"
-                                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 outline-none"
-                                    />
-                                </div>
-                                <div className="relative">
-                                    <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        name="username"
-                                        value={formData.username}
-                                        onChange={handleChange}
-                                        placeholder="Username"
-                                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 outline-none"
-                                    />
+                                <div className="space-y-4">
+                                    <div className="relative group">
+                                        <User className="absolute left-4 top-4 h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors duration-300" />
+                                        <input
+                                            type="text"
+                                            name="fullName"
+                                            value={formData.fullName}
+                                            onChange={handleChange}
+                                            placeholder="Full Name"
+                                            className="input-field pl-12"
+                                        />
+                                    </div>
+                                    <div className="relative group">
+                                        <User className="absolute left-4 top-4 h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors duration-300" />
+                                        <input
+                                            type="text"
+                                            name="username"
+                                            value={formData.username}
+                                            onChange={handleChange}
+                                            placeholder="Username"
+                                            className="input-field pl-12"
+                                        />
+                                    </div>
                                 </div>
                             </>
                         )}
 
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                placeholder="Email Address"
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 outline-none"
-                            />
-                        </div>
+                        <div className="space-y-4">
+                            <div className="relative group">
+                                <Mail className="absolute left-4 top-4 h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors duration-300" />
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    placeholder="Email Address"
+                                    className="input-field pl-12"
+                                />
+                            </div>
 
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                            <input
-                                type={showPassword ? "text" : "password"}
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                placeholder="Password"
-                                className="w-full pl-10 pr-12 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 outline-none"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition-colors duration-300"
-                            >
-                                {showPassword ? (
-                                    <EyeOff size={20} />
-                                ) : (
-                                    <Eye size={20} />
-                                )}
-                            </button>
+                            <div className="relative group">
+                                <Lock className="absolute left-4 top-4 h-5 w-5 text-gray-400 group-focus-within:text-primary-500 transition-colors duration-300" />
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    placeholder="Password"
+                                    className="input-field pl-12 pr-12"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setShowPassword(!showPassword)
+                                    }
+                                    className="absolute right-4 top-4 text-gray-400 hover:text-primary-500 transition-colors duration-300"
+                                >
+                                    {showPassword ? (
+                                        <EyeOff size={20} />
+                                    ) : (
+                                        <Eye size={20} />
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         {isLogin && (
                             <div className="flex justify-end">
                                 <button
                                     type="button"
-                                    className="text-sm text-indigo-600 hover:text-purple-600 transition-colors duration-300"
+                                    className="text-sm text-primary-600 hover:text-secondary-600 transition-colors duration-300 font-medium"
                                 >
                                     Forgot Password?
                                 </button>
@@ -205,34 +260,47 @@ const AuthForms = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg shadow-purple-500/25 transform hover:scale-[1.02] flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="btn-primary w-full py-4 text-base group disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                         >
-                            <span className="font-medium">
+                            <span className="font-semibold">
                                 {loading
                                     ? "Please wait..."
                                     : isLogin
-                                    ? "Sign In"
-                                    : "Create Account"}
+                                    ? "Sign In to SnapDeploy"
+                                    : "Create My Account"}
                             </span>
                             {!loading && (
-                                <ArrowRight className="h-5 w-5 transform group-hover:translate-x-1 transition-transform duration-300" />
+                                <ArrowRight className="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" />
                             )}
                         </button>
                     </form>
 
                     {/* Toggle Form */}
-                    <p className="mt-6 text-center text-slate-600">
-                        {isLogin
-                            ? "Don't have an account?"
-                            : "Already have an account?"}
+                    <div className="mt-8 text-center">
+                        <p className="text-gray-600 dark:text-gray-400">
+                            {isLogin
+                                ? "New to SnapDeploy?"
+                                : "Already have an account?"}
+                        </p>
                         <button
                             type="button"
                             onClick={toggleForm}
-                            className="ml-2 font-medium text-indigo-600 hover:text-purple-600 transition-colors duration-300"
+                            className="mt-2 font-semibold text-primary-600 hover:text-secondary-600 transition-colors duration-300 text-lg"
                         >
-                            {isLogin ? "Sign Up" : "Sign In"}
+                            {isLogin ? "Create Account" : "Sign In"}
                         </button>
-                    </p>
+                    </div>
+
+                    {/* Features highlight for new users */}
+                    {!isLogin && (
+                        <div className="mt-8 p-4 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20 rounded-xl border border-primary-200/50 dark:border-primary-700/50">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                                🚀 <strong>Deploy in seconds</strong> • 🔧{" "}
+                                <strong>Zero configuration</strong> • 📊{" "}
+                                <strong>Real-time monitoring</strong>
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
