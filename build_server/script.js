@@ -21,6 +21,65 @@ const PROJECT_ID = process.env.PROJECT_ID;
 const DEPLOYMENT_ID = process.env.DEPLOYMENT_ID;
 const FRONTEND_PATH = process.env.FRONTEND_PATH || "./";
 
+// Extract user-defined environment variables (exclude system variables)
+const SYSTEM_ENV_VARS = new Set([
+    "PROJECT_ID",
+    "DEPLOYMENT_ID",
+    "FRONTEND_PATH",
+    "GIT_REPOSITORY__URL",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_BUCKET_NAME",
+    "KAFKA_BROKER",
+    "KAFKA_USERNAME",
+    "KAFKA_PASSWORD",
+]);
+
+function getUserEnvironmentVariables() {
+    const userEnvVars = {};
+    for (const [key, value] of Object.entries(process.env)) {
+        if (
+            !SYSTEM_ENV_VARS.has(key) &&
+            !key.startsWith("npm_") &&
+            !key.startsWith("_")
+        ) {
+            userEnvVars[key] = value;
+        }
+    }
+    return userEnvVars;
+}
+
+async function createEnvFile(buildDir) {
+    try {
+        const userEnvVars = getUserEnvironmentVariables();
+
+        if (Object.keys(userEnvVars).length === 0) {
+            await publishMessage(
+                "No user environment variables found",
+                "running"
+            );
+            return;
+        }
+
+        const envFilePath = path.join(buildDir, ".env");
+        const envContent = Object.entries(userEnvVars)
+            .map(([key, value]) => `${key}=${value}`)
+            .join("\n");
+
+        fs.writeFileSync(envFilePath, envContent);
+        await publishMessage(
+            `.env file created with user-defined environment variables`,
+            "running"
+        );
+    } catch (error) {
+        await publishMessage(
+            `Failed to create .env file: ${error.message}`,
+            "running"
+        );
+        throw error;
+    }
+}
+
 const kafka = new Kafka({
     clientId: `build-server-${DEPLOYMENT_ID}`,
     brokers: [process.env.KAFKA_BROKER],
@@ -84,7 +143,7 @@ async function cleanupBeforeBuild(outDirPath) {
 }
 
 function executeBuild(outDirPath) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         // Determine the actual build directory based on frontend path
         const buildDir = path.join(outDirPath, FRONTEND_PATH);
 
@@ -105,6 +164,14 @@ function executeBuild(outDirPath) {
                     `No package.json found in frontend path '${FRONTEND_PATH}'. Please ensure this is the correct path to your frontend code.`
                 )
             );
+            return;
+        }
+
+        // Create .env file with user-defined environment variables
+        try {
+            await createEnvFile(buildDir);
+        } catch (error) {
+            reject(error);
             return;
         }
 
