@@ -1,0 +1,213 @@
+/* Human-like design enhancements */
+
+/* Subtle animations with natural easing */
+* {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Organic button hover effects */
+button,
+.btn {
+    transform: translateY(0px);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+button:hover,
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+button:active,
+.btn:active {
+    transform: translateY(0px);
+    transition: all 0.1s ease-out;
+}
+
+/* Slightly imperfect borders and shadows */
+.card,
+.project-card {
+    border-radius: 12px 11px 13px 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.card:hover,
+.project-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-color: rgba(59, 130, 246, 0.15);
+}
+
+/* Natural input focus states */
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Organic loading animations */
+@keyframes gentle-pulse {
+    0%,
+    100% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+}
+
+@keyframes natural-bounce {
+    0%,
+    20%,
+    53%,
+    80%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+    40%,
+    43% {
+        transform: translate3d(0, -8px, 0);
+    }
+    70% {
+        transform: translate3d(0, -4px, 0);
+    }
+    90% {
+        transform: translate3d(0, -2px, 0);
+    }
+}
+
+@keyframes organic-float {
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    33% {
+        transform: translateY(-3px) rotate(0.5deg);
+    }
+    66% {
+        transform: translateY(2px) rotate(-0.3deg);
+    }
+}
+
+/* Apply natural animations */
+.loading-dots > div {
+    animation: natural-bounce 1.4s infinite;
+}
+
+.floating-element {
+    animation: organic-float 6s ease-in-out infinite;
+}
+
+/* Asymmetric grid layouts */
+.organic-grid {
+    display: grid;
+    gap: 1.25rem 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.organic-grid > :nth-child(3n + 1) {
+    transform: translateY(4px);
+}
+
+.organic-grid > :nth-child(3n + 2) {
+    transform: translateY(-2px);
+}
+
+.organic-grid > :nth-child(3n + 3) {
+    transform: translateY(6px);
+}
+
+/* Natural text spacing */
+.human-text {
+    line-height: 1.65;
+    letter-spacing: 0.01em;
+}
+
+.human-text h1,
+.human-text h2,
+.human-text h3 {
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+}
+
+/* Subtle gradient backgrounds */
+.organic-bg {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(248, 250, 252, 0.95) 50%,
+        rgba(241, 245, 249, 0.9) 100%
+    );
+}
+
+.organic-bg-dark {
+    background: linear-gradient(
+        135deg,
+        rgba(15, 23, 42, 0.95) 0%,
+        rgba(30, 41, 59, 0.9) 50%,
+        rgba(51, 65, 85, 0.85) 100%
+    );
+}
+
+/* Imperfect spacing system */
+.space-organic-1 {
+    margin: 0.35rem 0.25rem 0.45rem 0.3rem;
+}
+.space-organic-2 {
+    margin: 0.65rem 0.5rem 0.75rem 0.6rem;
+}
+.space-organic-3 {
+    margin: 1.1rem 0.9rem 1.3rem 1rem;
+}
+.space-organic-4 {
+    margin: 1.8rem 1.5rem 2.1rem 1.7rem;
+}
+
+/* Natural hover states for interactive elements */
+.interactive-element {
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-element:hover {
+    transform: translateY(-1px) scale(1.02);
+}
+
+/* Organic form styling */
+.form-group {
+    margin-bottom: 1.4rem;
+}
+
+.form-group:nth-child(odd) {
+    margin-bottom: 1.6rem;
+}
+
+.form-group:nth-child(even) {
+    margin-bottom: 1.2rem;
+}
+
+/* Slightly imperfect alignment */
+.slightly-off-center {
+    transform: translateX(1px);
+}
+
+.barely-rotated {
+    transform: rotate(0.5deg);
+}
+
+/* Natural button groups */
+.btn-group button:first-child {
+    border-radius: 8px 6px 6px 8px;
+}
+
+.btn-group button:last-child {
+    border-radius: 6px 8px 8px 6px;
+}
+
+.btn-group button:not(:first-child):not(:last-child) {
+    border-radius: 4px 6px 6px 4px;
+}
