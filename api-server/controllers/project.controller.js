@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { generateSlug } from "random-word-slugs";
 import { Project } from "../models/project.model.js";
+import { User } from "../models/user.model.js";
+import { GitHubService } from "../services/github.service.js";
 
 export const createProject = async (req, res) => {
     const projectSchema = z.object({
@@ -12,6 +14,9 @@ export const createProject = async (req, res) => {
         slug: z.string().optional(),
         frontendPath: z.string().optional().default("./"),
         envVariables: z.record(z.string()).optional().default({}),
+        githubRepoId: z.string().optional(),
+        githubBranch: z.string().optional().default("main"),
+        isPrivateRepo: z.boolean().optional().default(false),
     });
 
     const safeParse = projectSchema.safeParse(req.body);
@@ -23,7 +28,16 @@ export const createProject = async (req, res) => {
         });
     }
 
-    const { name, gitURL, slug, frontendPath, envVariables } = safeParse.data;
+    const {
+        name,
+        gitURL,
+        slug,
+        frontendPath,
+        envVariables,
+        githubRepoId,
+        githubBranch,
+        isPrivateRepo,
+    } = safeParse.data;
 
     try {
         const existingProject = await Project.findOne({
@@ -39,14 +53,60 @@ export const createProject = async (req, res) => {
         }
 
         const subdomain = slug || generateSlug();
-        const project = new Project({
+
+        // Prepare project data
+        const projectData = {
             name,
             gitURL,
             subdomain,
             owner: req.user._id,
             frontendPath: frontendPath || "./",
             envVariables: new Map(Object.entries(envVariables || {})),
-        });
+            githubBranch: githubBranch || "main",
+            isPrivateRepo: isPrivateRepo || false,
+        };
+
+        // If it's a private repo, store the access token
+        if (isPrivateRepo) {
+            const user = await User.findById(req.user._id);
+
+            if (!user.isGithubConnected || !user.githubAccessToken) {
+                return res.status(400).json({
+                    error: "GitHub account not connected for private repository access",
+                    message:
+                        "Please connect your GitHub account to deploy private repositories",
+                });
+            }
+
+            // Verify user has access to the repository
+            const accessToken = GitHubService.decryptToken(
+                user.githubAccessToken
+            );
+            const [, , , owner, repo] = gitURL.split("/");
+
+            const verification = await GitHubService.verifyRepositoryAccess(
+                accessToken,
+                owner,
+                repo
+            );
+
+            if (!verification.hasAccess) {
+                return res.status(403).json({
+                    error: "Repository access denied",
+                    message:
+                        verification.error ||
+                        "You don't have access to this repository",
+                });
+            }
+
+            projectData.repoAccessToken = user.githubAccessToken; // Already encrypted
+        }
+
+        if (githubRepoId) {
+            projectData.githubRepoId = githubRepoId;
+        }
+
+        const project = new Project(projectData);
 
         await project.save();
 
@@ -126,7 +186,7 @@ export const getRecentProjects = async (req, res) => {
             name: project.name,
             status: project.status || "Active",
             deployed: formatTimeAgo(project.deployedAt || project.updatedAt),
-            url:`${project.subdomain}.snapdeploy.me`,
+            url: `${project.subdomain}.snapdeploy.me`,
         }));
 
         res.status(200).json({
@@ -151,10 +211,14 @@ const formatTimeAgo = (date) => {
     const diffInHours = Math.floor(diffInMins / 60);
     const diffInDays = Math.floor(diffInHours / 24);
 
-    if (diffInSecs < 60) return `${diffInSecs} second${diffInSecs !== 1 ? "s" : ""} ago`;
-    if (diffInMins < 60) return `${diffInMins} minute${diffInMins !== 1 ? "s" : ""} ago`;
-    if (diffInHours < 24) return `${diffInHours} hour${diffInHours !== 1 ? "s" : ""} ago`;
-    if (diffInDays < 7) return `${diffInDays} day${diffInDays !== 1 ? "s" : ""} ago`;
+    if (diffInSecs < 60)
+        return `${diffInSecs} second${diffInSecs !== 1 ? "s" : ""} ago`;
+    if (diffInMins < 60)
+        return `${diffInMins} minute${diffInMins !== 1 ? "s" : ""} ago`;
+    if (diffInHours < 24)
+        return `${diffInHours} hour${diffInHours !== 1 ? "s" : ""} ago`;
+    if (diffInDays < 7)
+        return `${diffInDays} day${diffInDays !== 1 ? "s" : ""} ago`;
     return `${Math.floor(diffInDays / 7)} week${
         Math.floor(diffInDays / 7) !== 1 ? "s" : ""
     } ago`;

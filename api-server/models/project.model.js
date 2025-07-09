@@ -14,6 +14,20 @@ const projectScheme = new mongoose.Schema(
             type: String,
             required: true,
         },
+        githubRepoId: {
+            type: String,
+        },
+        githubBranch: {
+            type: String,
+            default: "main",
+        },
+        isPrivateRepo: {
+            type: Boolean,
+            default: false,
+        },
+        repoAccessToken: {
+            type: String, // Store encrypted token for private repos
+        },
         subdomain: {
             type: String,
             required: true,
