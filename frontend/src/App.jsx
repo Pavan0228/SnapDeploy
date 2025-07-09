@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import AuthForms from "./pages/AuthForms";
+import GitHubCallback from "./pages/GitHubCallback";
+import HomePage from "./pages/HomePage";
 import Cookies from "js-cookie";
 import { Toaster } from "react-hot-toast";
 import { ProjectDetail } from "./pages/ProjectDetail";
@@ -59,8 +61,7 @@ const App = () => {
         }
 
         if (!isAuthenticated) {
-            console.log("Not authenticated");
-            return <Navigate to="/auth" replace />;
+            return <Navigate to="/home" replace />;
         }
         return children;
     };
@@ -130,6 +131,9 @@ const App = () => {
                     }}
                 />
                 <Routes>
+                    {/* Home Route */}
+                    <Route path="/home" element={<HomePage />} />
+
                     {/* Auth Routes */}
                     <Route
                         path="/auth"
@@ -140,6 +144,12 @@ const App = () => {
                                 />
                             </AuthRoute>
                         }
+                    />
+
+                    {/* GitHub OAuth Callback */}
+                    <Route
+                        path="/auth/github/callback"
+                        element={<GitHubCallback />}
                     />
 
                     {/* Protected Routes */}
@@ -178,7 +188,7 @@ const App = () => {
                     </Route>
 
                     {/* Catch-all route */}
-                    <Route path="*" element={<Navigate to="/auth" replace />} />
+                    <Route path="*" element={<Navigate to="/home" replace />} />
                 </Routes>
             </BrowserRouter>
         </ThemeProvider>
