@@ -11,10 +11,13 @@ import {
     Zap,
     Github,
     Globe,
+    Link,
+    Code,
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { BASE_API_SERVER_URL } from "../constant/url";
 import { useTheme } from "../contexts/ThemeContext";
+import { GitHubRepositorySelector } from "../components/GitHubRepositorySelector";
 
 export function CreateProject() {
     const { theme } = useTheme();
@@ -24,12 +27,27 @@ export function CreateProject() {
         slug: "",
         frontendPath: "./",
         envVariables: {},
+        githubRepoId: "",
+        githubBranch: "main",
+        isPrivateRepo: false,
     });
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState(null);
     const [showAdvanced, setShowAdvanced] = React.useState(false);
     const [envVars, setEnvVars] = React.useState([{ key: "", value: "" }]);
+    const [useGitHubSelector, setUseGitHubSelector] = React.useState(false);
+    const [selectedRepo, setSelectedRepo] = React.useState(null);
     const navigate = useNavigate();
+
+    // Generate a slug from a name by replacing spaces with dashes and converting to lowercase
+    const generateSlug = (name) => {
+        return name
+            .toLowerCase()
+            .replace(/\s+/g, "-") // Replace spaces with dashes
+            .replace(/[^a-z0-9-]/g, "") // Remove non-alphanumeric characters except dashes
+            .replace(/--+/g, "-") // Replace multiple consecutive dashes with single dash
+            .replace(/^-|-$/g, ""); // Remove leading and trailing dashes
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -77,9 +95,36 @@ export function CreateProject() {
     };
 
     const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        // Auto-generate slug when project name changes
+        if (name === "name" && value.trim()) {
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+                slug: generateSlug(value),
+            }));
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
+    };
+
+    const handleRepositorySelect = (repo) => {
+        setSelectedRepo(repo);
+        const repoName = repo.name;
+        const generatedSlug = generateSlug(repoName);
+
         setFormData((prev) => ({
             ...prev,
-            [e.target.name]: e.target.value,
+            name: repoName,
+            gitURL: repo.htmlUrl,
+            slug: generatedSlug,
+            githubRepoId: repo.id.toString(),
+            githubBranch: repo.selectedBranch || repo.defaultBranch || "main",
+            isPrivateRepo: repo.private,
         }));
     };
 
@@ -150,23 +195,67 @@ export function CreateProject() {
                         </div>
 
                         <div className="md:col-span-2">
-                            <label
-                                htmlFor="gitURL"
-                                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                            >
-                                <Github className="h-4 w-4 inline mr-1" />
-                                Git Repository URL
-                            </label>
-                            <input
-                                type="url"
-                                id="gitURL"
-                                name="gitURL"
-                                required
-                                value={formData.gitURL}
-                                onChange={handleChange}
-                                className="input-field"
-                                placeholder="https://github.com/username/repository.git"
-                            />
+                            <div className="flex items-center justify-between mb-4">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <Github className="h-4 w-4 inline mr-1" />
+                                    Repository Source
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setUseGitHubSelector(false)
+                                        }
+                                        className={`px-3 py-1 rounded-md text-sm transition-colors ${
+                                            !useGitHubSelector
+                                                ? "bg-blue-600 text-white"
+                                                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                        }`}
+                                    >
+                                        <Link className="w-4 h-4 inline mr-1" />
+                                        URL
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setUseGitHubSelector(true)
+                                        }
+                                        className={`px-3 py-1 rounded-md text-sm transition-colors ${
+                                            useGitHubSelector
+                                                ? "bg-blue-600 text-white"
+                                                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                        }`}
+                                    >
+                                        <Code className="w-4 h-4 inline mr-1" />
+                                        GitHub
+                                    </button>
+                                </div>
+                            </div>
+
+                            {useGitHubSelector ? (
+                                <GitHubRepositorySelector
+                                    onRepositorySelect={handleRepositorySelect}
+                                    selectedRepo={selectedRepo}
+                                />
+                            ) : (
+                                <div>
+                                    <input
+                                        type="url"
+                                        id="gitURL"
+                                        name="gitURL"
+                                        required
+                                        value={formData.gitURL}
+                                        onChange={handleChange}
+                                        className="input-field"
+                                        placeholder="https://github.com/username/repository.git"
+                                    />
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                        Enter a public GitHub repository URL or
+                                        connect your GitHub account to access
+                                        private repositories.
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="md:col-span-2">
@@ -175,7 +264,7 @@ export function CreateProject() {
                                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                             >
                                 <Globe className="h-4 w-4 inline mr-1" />
-                                Custom Domain (optional)
+                                Subdomain
                             </label>
                             <input
                                 type="text"
@@ -187,10 +276,9 @@ export function CreateProject() {
                                 placeholder="my-awesome-app"
                             />
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                                Leave empty to generate a random subdomain. Your
-                                app will be available at
+                                Auto-generated from project name. Your app will
+                                be available at{" "}
                                 <span className="font-mono text-primary-600 dark:text-primary-400">
-                                    {" "}
                                     {formData.slug || "your-domain"}
                                     .snapdeploy.app
                                 </span>
