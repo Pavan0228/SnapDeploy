@@ -12,7 +12,7 @@ app.use(
         origin: process.env.CORS_ORIGIN || "*",
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"]
+        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     })
 );
 
@@ -38,12 +38,14 @@ import deploymentRoutes from "./routes/deployment.routes.js";
 import logsRoutes from "./routes/logs.routes.js";
 import healthRoutes from "./routes/health.routes.js";
 import statsRoutes from "./routes/stats.route.js";
+import githubRoutes from "./routes/github.routes.js";
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/deployments", deploymentRoutes);
 app.use("/api/v1/logs", logsRoutes);
 app.use("/api/v1/stats", statsRoutes);
+app.use("/api/v1/github", githubRoutes);
 app.use("/api/v1", healthRoutes);
 app.use("/status", (req, res) => {
     res.status(200).json({
