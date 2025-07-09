@@ -32,6 +32,28 @@ const userShema = new mongoose.Schema(
         refreshToken: {
             type: String,
         },
+        githubId: {
+            type: String,
+            sparse: true,
+            unique: true,
+        },
+        githubUsername: {
+            type: String,
+        },
+        githubAccessToken: {
+            type: String,
+        },
+        githubRefreshToken: {
+            type: String,
+        },
+        isGithubConnected: {
+            type: Boolean,
+            default: false,
+        },
+        profilePhoto: {
+            type: String,
+            default: null,
+        },
     },
 
     {
