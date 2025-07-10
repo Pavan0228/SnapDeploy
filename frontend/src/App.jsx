@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./styles/styles.css";
 import Profile from "./pages/Profile";
+import HelpSupport from "./pages/HelpSupport";
 
 const App = () => {
     // Auth state management
@@ -184,7 +185,7 @@ const App = () => {
                         />
                         <Route
                             path="help-support"
-                            element={<div>Help Content</div>}
+                            element={<HelpSupport />}
                         />
                     </Route>
 
