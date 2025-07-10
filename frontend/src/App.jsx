@@ -13,6 +13,7 @@ import CreateProject from "./pages/CreateProject";
 import Dashboard from "./pages/Dashboard";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./styles/styles.css";
+import Profile from "./pages/Profile";
 
 const App = () => {
     // Auth state management
@@ -179,7 +180,7 @@ const App = () => {
                         />
                         <Route
                             path="profile"
-                            element={<div>Profile Content</div>}
+                            element={<Profile />}
                         />
                         <Route
                             path="help-support"
