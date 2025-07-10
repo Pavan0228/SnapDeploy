@@ -179,14 +179,8 @@ const App = () => {
                             path="projects/:projectId"
                             element={<ProjectDetail />}
                         />
-                        <Route
-                            path="profile"
-                            element={<Profile />}
-                        />
-                        <Route
-                            path="help-support"
-                            element={<HelpSupport />}
-                        />
+                        <Route path="profile" element={<Profile />} />
+                        <Route path="help-support" element={<HelpSupport />} />
                     </Route>
 
                     {/* Catch-all route */}

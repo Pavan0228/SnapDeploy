@@ -173,8 +173,9 @@ const HelpSupport = () => {
     ];
 
     const filteredFaqs = faqs.filter((faq) => {
-        const matchesCategory = activeCategory === "all" || faq.category === activeCategory;
-        const matchesSearch = 
+        const matchesCategory =
+            activeCategory === "all" || faq.category === activeCategory;
+        const matchesSearch =
             faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
             faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesCategory && matchesSearch;
@@ -198,7 +199,8 @@ const HelpSupport = () => {
                                 Help & Support
                             </h1>
                             <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
-                                Get the help you need to succeed with BuildSphere
+                                Get the help you need to succeed with
+                                BuildSphere
                             </p>
                         </div>
                     </div>
@@ -229,8 +231,12 @@ const HelpSupport = () => {
                                 key={index}
                                 className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
                             >
-                                <div className={`p-3 bg-${link.color}-100 dark:bg-${link.color}-900/20 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform`}>
-                                    <link.icon className={`h-6 w-6 text-${link.color}-600 dark:text-${link.color}-400`} />
+                                <div
+                                    className={`p-3 bg-${link.color}-100 dark:bg-${link.color}-900/20 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform`}
+                                >
+                                    <link.icon
+                                        className={`h-6 w-6 text-${link.color}-600 dark:text-${link.color}-400`}
+                                    />
                                 </div>
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                                     {link.title}
@@ -261,7 +267,9 @@ const HelpSupport = () => {
                                 {categories.map((category) => (
                                     <button
                                         key={category.id}
-                                        onClick={() => setActiveCategory(category.id)}
+                                        onClick={() =>
+                                            setActiveCategory(category.id)
+                                        }
                                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                                             activeCategory === category.id
                                                 ? "bg-primary-600 text-white shadow-lg"
@@ -283,7 +291,9 @@ const HelpSupport = () => {
                                             className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
                                         >
                                             <button
-                                                onClick={() => toggleFaq(faq.id)}
+                                                onClick={() =>
+                                                    toggleFaq(faq.id)
+                                                }
                                                 className="w-full px-6 py-4 text-left flex items-center justify-between bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
                                             >
                                                 <span className="text-gray-900 dark:text-white font-medium">
@@ -362,10 +372,26 @@ const HelpSupport = () => {
                             </h3>
                             <div className="space-y-3">
                                 {[
-                                    { icon: FileText, label: "Documentation", desc: "Complete guides" },
-                                    { icon: Play, label: "Video Tutorials", desc: "Step-by-step videos" },
-                                    { icon: Download, label: "Examples", desc: "Sample projects" },
-                                    { icon: Lightbulb, label: "Best Practices", desc: "Tips & tricks" },
+                                    {
+                                        icon: FileText,
+                                        label: "Documentation",
+                                        desc: "Complete guides",
+                                    },
+                                    {
+                                        icon: Play,
+                                        label: "Video Tutorials",
+                                        desc: "Step-by-step videos",
+                                    },
+                                    {
+                                        icon: Download,
+                                        label: "Examples",
+                                        desc: "Sample projects",
+                                    },
+                                    {
+                                        icon: Lightbulb,
+                                        label: "Best Practices",
+                                        desc: "Tips & tricks",
+                                    },
                                 ].map((resource, index) => (
                                     <div
                                         key={index}
