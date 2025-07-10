@@ -2,6 +2,7 @@ import { User } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { GitHubService } from "../services/github.service.js";
 import axios from "axios";
+import { uploadFileToS3 } from "../utils/s3.utils.js";
 
 // Simple in-memory cache to prevent duplicate code usage
 const processedCodes = new Set();
@@ -271,8 +272,9 @@ const githubLogin = asyncHandler(async (req, res) => {
             // Update existing user's GitHub data
             console.log("Encrypting GitHub access token for existing user...");
             user.githubAccessToken = GitHubService.encryptToken(access_token);
-            if(refresh_token){
-                user.githubRefreshToken = GitHubService.encryptToken(refresh_token);
+            if (refresh_token) {
+                user.githubRefreshToken =
+                    GitHubService.encryptToken(refresh_token);
             }
             user.githubUsername = githubUser.login;
             user.isGithubConnected = true;
@@ -386,6 +388,128 @@ const githubLogin = asyncHandler(async (req, res) => {
     }
 });
 
+const updateDetails = asyncHandler(async (req, res) => {
+    try {
+        const { fullName, username, email } = req.body;
+        
+        // Check if at least one field is provided
+        if (!fullName && !username && !email) {
+            return res.status(400).json({
+                success: false,
+                message: "At least one field is required to update"
+            });
+        }
+
+        // Create an object with only the provided fields
+        const updateFields = {};
+        if (fullName) updateFields.fullName = fullName;
+        
+        // If username is provided, check if it's already taken
+        if (username) {
+            const existingUser = await User.findOne({ 
+                username,
+                _id: { $ne: req.user._id } // Exclude current user from check
+            });
+            
+            if (existingUser) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Username already taken"
+                });
+            }
+            
+            updateFields.username = username;
+        }
+        
+        // If email is provided, check if it's already taken
+        if (email) {
+            const existingUser = await User.findOne({ 
+                email,
+                _id: { $ne: req.user._id } // Exclude current user from check
+            });
+            
+            if (existingUser) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Email already registered"
+                });
+            }
+            
+            updateFields.email = email;
+        }
+
+        // Update user with only the provided fields
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user._id,
+            { $set: updateFields },
+            { new: true }
+        ).select("-password -refreshToken");
+
+        if (!updatedUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "User details updated successfully",
+            user: updatedUser
+        });
+    } catch (error) {
+        console.error("Error updating user details:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error updating user details",
+            error: error.message
+        });
+    }
+});
+
+
+const updatedProfilePhoto = asyncHandler(async (req, res) => {
+    try {
+        // Check if file exists in the request
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "No image file provided",
+            });
+        }
+
+        // Upload to S3
+        const s3Result = await uploadFileToS3(req.file);
+
+        // Update user profile with the new photo URL
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user._id,
+            { profilePhoto: s3Result.Location },
+            { new: true }
+        ).select("-password -refreshToken");
+
+        if (!updatedUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile photo updated successfully",
+            user: updatedUser,
+        });
+    } catch (error) {
+        console.error("Error updating profile photo:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error updating profile photo",
+            error: error.message,
+        });
+    }
+});
+
 export {
     registerUser,
     loginUser,
@@ -393,4 +517,6 @@ export {
     getCurrentUser,
     getUserById,
     githubLogin,
+    updatedProfilePhoto,
+    updateDetails,
 };
