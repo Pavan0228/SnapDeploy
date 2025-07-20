@@ -20,6 +20,9 @@ const s3Client = new S3Client({
 const PROJECT_ID = process.env.PROJECT_ID;
 const DEPLOYMENT_ID = process.env.DEPLOYMENT_ID;
 const FRONTEND_PATH = process.env.FRONTEND_PATH || "./";
+const GITHUB_ACCESS_TOKEN = process.env.GITHUB_ACCESS_TOKEN;
+const IS_PRIVATE_REPO = process.env.IS_PRIVATE_REPO === "true";
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
 
 // Extract user-defined environment variables (exclude system variables)
 const SYSTEM_ENV_VARS = new Set([
@@ -27,6 +30,9 @@ const SYSTEM_ENV_VARS = new Set([
     "DEPLOYMENT_ID",
     "FRONTEND_PATH",
     "GIT_REPOSITORY__URL",
+    "GITHUB_ACCESS_TOKEN",
+    "IS_PRIVATE_REPO",
+    "GITHUB_BRANCH",
     "AWS_ACCESS_KEY_ID",
     "AWS_SECRET_ACCESS_KEY",
     "AWS_BUCKET_NAME",
@@ -47,6 +53,18 @@ function getUserEnvironmentVariables() {
         }
     }
     return userEnvVars;
+}
+
+function getRepositoryInfo() {
+    const gitUrl = process.env.GIT_REPOSITORY__URL;
+    const isGitHub = gitUrl && gitUrl.includes("github.com");
+
+    return {
+        isGitHub,
+        isPrivate: IS_PRIVATE_REPO,
+        branch: GITHUB_BRANCH,
+        hasAccessToken: !!GITHUB_ACCESS_TOKEN,
+    };
 }
 
 async function createEnvFile(buildDir) {
@@ -392,6 +410,36 @@ async function init() {
     try {
         await producer.connect();
         await publishMessage("Deployment started", "running");
+
+        const repoInfo = getRepositoryInfo();
+
+        // Validate repository access for private repos
+        if (repoInfo.isPrivate && !repoInfo.hasAccessToken) {
+            throw new Error(
+                "Private repository detected but no GitHub access token provided"
+            );
+        }
+
+        // Log repository information
+        if (repoInfo.isGitHub) {
+            if (repoInfo.isPrivate) {
+                await publishMessage(
+                    `Cloning private GitHub repository (branch: ${repoInfo.branch})`,
+                    "running"
+                );
+            } else {
+                await publishMessage(
+                    `Cloning public GitHub repository (branch: ${repoInfo.branch})`,
+                    "running"
+                );
+            }
+        } else {
+            await publishMessage(
+                `Cloning repository from: ${process.env.GIT_REPOSITORY__URL}`,
+                "running"
+            );
+        }
+
         await publishMessage(
             `Using frontend path: ${FRONTEND_PATH}`,
             "running"
