@@ -176,6 +176,9 @@ export function ProjectDetail() {
         ? `https://${project.subdomain}.${REVERSE_PROXY_URL}`
         : "";
 
+    // Check if deployment is successfully completed
+    const isDeploymentCompleted = deploymentPhase === "completed";
+
     const refreshLogs = React.useCallback(async () => {
         if (!project?.deployments?.length) return;
 
@@ -299,7 +302,8 @@ export function ProjectDetail() {
                                     {project.name}
                                 </h1>
                                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                                    {project.description || "SnapDeploy Project"}
+                                    {project.description ||
+                                        "SnapDeploy Project"}
                                 </p>
                             </div>
                         </div>
@@ -315,7 +319,7 @@ export function ProjectDetail() {
                                 <span>View Repository</span>
                                 <ExternalLink className="h-4 w-4 ml-auto group-hover:translate-x-1 transition-transform" />
                             </a>
-                            {previewUrl && (
+                            {previewUrl && isDeploymentCompleted && (
                                 <a
                                     href={previewUrl}
                                     target="_blank"
@@ -350,13 +354,15 @@ export function ProjectDetail() {
                         </div>
                     </div>
 
-                    {previewUrl && (
+                    {previewUrl && isDeploymentCompleted && (
                         <div className="relative group">
                             <div className="relative h-[400px] rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700">
                                 <iframe
                                     src={previewUrl}
                                     className={`w-full h-full border-0 transition-opacity duration-500 ${
-                                        previewLoaded ? "opacity-100" : "opacity-0"
+                                        previewLoaded
+                                            ? "opacity-100"
+                                            : "opacity-0"
                                     }`}
                                     title="Website Preview"
                                     onLoad={() => setPreviewLoaded(true)}
@@ -366,7 +372,9 @@ export function ProjectDetail() {
                                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                                         <div className="text-center">
                                             <Loader className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-2" />
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">Loading preview...</p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                Loading preview...
+                                            </p>
                                         </div>
                                     </div>
                                 )}
@@ -378,8 +386,58 @@ export function ProjectDetail() {
                                         className="flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all"
                                     >
                                         <Eye className="w-4 h-4" />
-                                        <span className="text-sm font-medium">Open in new tab</span>
+                                        <span className="text-sm font-medium">
+                                            Open in new tab
+                                        </span>
                                     </a>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Deployment Status Indicator */}
+                    {previewUrl && !isDeploymentCompleted && (
+                        <div className="relative group">
+                            <div className="relative h-[400px] rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="text-center">
+                                        <div className="p-6 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-2xl shadow-lg mb-6 animate-pulse">
+                                            <Zap className="h-12 w-12 text-white" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                                            {deploymentPhase === "failed"
+                                                ? "Deployment Failed"
+                                                : isStreaming
+                                                ? "Deployment in Progress..."
+                                                : "Preparing Deployment..."}
+                                        </h3>
+                                        <p className="text-gray-600 dark:text-gray-400">
+                                            {deploymentPhase === "failed"
+                                                ? "Please check the logs below for error details"
+                                                : "Your website preview will appear here once deployment is complete"}
+                                        </p>
+                                        {isStreaming && (
+                                            <div className="mt-4 flex items-center justify-center gap-2">
+                                                <Loader className="w-4 h-4 animate-spin text-primary-600" />
+                                                <span className="text-sm text-primary-600 dark:text-primary-400">
+                                                    {deploymentPhase ===
+                                                        "initializing" &&
+                                                        "Initializing..."}
+                                                    {deploymentPhase ===
+                                                        "dependencies" &&
+                                                        "Installing Dependencies..."}
+                                                    {deploymentPhase ===
+                                                        "building" &&
+                                                        "Building Application..."}
+                                                    {deploymentPhase ===
+                                                        "uploading" &&
+                                                        "Uploading to Cloud..."}
+                                                    {!deploymentPhase &&
+                                                        "Starting..."}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -409,7 +467,12 @@ export function ProjectDetail() {
                         <div className="flex flex-wrap items-center gap-4">
                             <div
                                 className={`flex items-center space-x-2 px-4 py-3 rounded-xl transition-all ${
-                                    ["dependencies", "building", "uploading", "completed"].includes(deploymentPhase)
+                                    [
+                                        "dependencies",
+                                        "building",
+                                        "uploading",
+                                        "completed",
+                                    ].includes(deploymentPhase)
                                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                                         : deploymentPhase === "initializing"
                                         ? "bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-400"
@@ -418,7 +481,12 @@ export function ProjectDetail() {
                             >
                                 {deploymentPhase === "initializing" ? (
                                     <Loader className="w-4 h-4 animate-spin" />
-                                ) : ["dependencies", "building", "uploading", "completed"].includes(deploymentPhase) ? (
+                                ) : [
+                                      "dependencies",
+                                      "building",
+                                      "uploading",
+                                      "completed",
+                                  ].includes(deploymentPhase) ? (
                                     <CheckCircle className="w-4 h-4" />
                                 ) : (
                                     <div className="w-4 h-4 rounded-full border-2 border-current opacity-30"></div>
@@ -430,7 +498,11 @@ export function ProjectDetail() {
 
                             <div
                                 className={`flex items-center space-x-2 px-4 py-3 rounded-xl transition-all ${
-                                    ["building", "uploading", "completed"].includes(deploymentPhase)
+                                    [
+                                        "building",
+                                        "uploading",
+                                        "completed",
+                                    ].includes(deploymentPhase)
                                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                                         : deploymentPhase === "dependencies"
                                         ? "bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-400"
@@ -439,7 +511,11 @@ export function ProjectDetail() {
                             >
                                 {deploymentPhase === "dependencies" ? (
                                     <Loader className="w-4 h-4 animate-spin" />
-                                ) : ["building", "uploading", "completed"].includes(deploymentPhase) ? (
+                                ) : [
+                                      "building",
+                                      "uploading",
+                                      "completed",
+                                  ].includes(deploymentPhase) ? (
                                     <CheckCircle className="w-4 h-4" />
                                 ) : (
                                     <div className="w-4 h-4 rounded-full border-2 border-current opacity-30"></div>
@@ -487,14 +563,24 @@ export function ProjectDetail() {
                                     : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
                             }`}
                         >
-                            {deploymentPhase === "completed" && "🎉 Deployed Successfully"}
-                            {deploymentPhase === "failed" && "❌ Deployment Failed"}
-                            {deploymentPhase === "initializing" && "🚀 Initializing..."}
-                            {deploymentPhase === "dependencies" && "📦 Installing Dependencies..."}
-                            {deploymentPhase === "building" && "🔨 Building Application..."}
-                            {deploymentPhase === "uploading" && "☁️ Uploading to Cloud..."}
-                            {!deploymentPhase && isStreaming && "⏳ Starting Deployment..."}
-                            {!deploymentPhase && !isStreaming && "📋 Deployment Logs"}
+                            {deploymentPhase === "completed" &&
+                                "🎉 Deployed Successfully"}
+                            {deploymentPhase === "failed" &&
+                                "❌ Deployment Failed"}
+                            {deploymentPhase === "initializing" &&
+                                "🚀 Initializing..."}
+                            {deploymentPhase === "dependencies" &&
+                                "📦 Installing Dependencies..."}
+                            {deploymentPhase === "building" &&
+                                "🔨 Building Application..."}
+                            {deploymentPhase === "uploading" &&
+                                "☁️ Uploading to Cloud..."}
+                            {!deploymentPhase &&
+                                isStreaming &&
+                                "⏳ Starting Deployment..."}
+                            {!deploymentPhase &&
+                                !isStreaming &&
+                                "📋 Deployment Logs"}
                         </div>
                     </div>
                 </div>
@@ -512,7 +598,9 @@ export function ProjectDetail() {
                                 Deployment Logs
                             </h2>
                             <p className="text-gray-600 dark:text-gray-400 mt-1">
-                                {isStreaming ? "Real-time log streaming" : "Deployment history"}
+                                {isStreaming
+                                    ? "Real-time log streaming"
+                                    : "Deployment history"}
                             </p>
                         </div>
                     </div>
@@ -571,7 +659,8 @@ export function ProjectDetail() {
                                                 className={`text-xs px-3 py-1 rounded-full font-medium ${
                                                     log.status === "completed"
                                                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                                                        : log.status === "failed"
+                                                        : log.status ===
+                                                          "failed"
                                                         ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
                                                         : "bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-400"
                                                 }`}
@@ -580,7 +669,9 @@ export function ProjectDetail() {
                                             </span>
                                             <span className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 px-3 py-1 rounded-full">
                                                 <Clock className="w-3 h-3 inline mr-1" />
-                                                {new Date(log.timestamp).toLocaleString()}
+                                                {new Date(
+                                                    log.timestamp
+                                                ).toLocaleString()}
                                             </span>
                                         </div>
                                     </div>
@@ -596,7 +687,8 @@ export function ProjectDetail() {
                                 No Logs Available
                             </h3>
                             <p className="text-gray-500 dark:text-gray-400">
-                                Deployment logs will appear here once your project starts building
+                                Deployment logs will appear here once your
+                                project starts building
                             </p>
                         </div>
                     )}
