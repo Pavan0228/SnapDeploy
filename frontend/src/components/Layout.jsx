@@ -185,9 +185,9 @@ const Layout = ({ setIsAuthenticated }) => {
 
                 {/* Main Content */}
                 <main
-                    className={`flex-1 transition-all duration-300 px-4 lg:px-8 py-6
+                    className={`flex-1 transition-all duration-300 px-4 lg:px-6 py-6
                     ${isExpanded ? "lg:ml-64" : "lg:ml-20"} 
-                    relative max-w-7xl mx-auto w-full`}
+                    relative w-full min-h-screen`}
                 >
                     <Outlet />
                 </main>

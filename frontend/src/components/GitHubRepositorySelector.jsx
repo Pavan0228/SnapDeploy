@@ -216,19 +216,19 @@ export const GitHubRepositorySelector = React.memo(
 
         if (!isConnected) {
             return (
-                <div className="p-6 border border-gray-200 rounded-lg bg-gray-50">
+                <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
                     <div className="text-center">
-                        <Github className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <Github className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                             Connect to GitHub
                         </h3>
-                        <p className="text-gray-600 mb-4">
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
                             Connect your GitHub account to access your
                             repositories and deploy projects directly.
                         </p>
                         <button
                             onClick={connectToGitHub}
-                            className="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 flex items-center gap-2 mx-auto"
+                            className="bg-gray-900 dark:bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-800 dark:hover:bg-gray-600 flex items-center gap-2 mx-auto transition-colors"
                         >
                             <Github className="w-4 h-4" />
                             Connect GitHub
@@ -243,16 +243,18 @@ export const GitHubRepositorySelector = React.memo(
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Github className="w-5 h-5" />
-                        <span className="font-medium">GitHub Repositories</span>
-                        <span className="text-sm text-gray-500">
+                        <Github className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                        <span className="font-medium text-gray-900 dark:text-white">
+                            GitHub Repositories
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
                             ({githubUsername})
                         </span>
                     </div>
                     <button
                         onClick={() => fetchRepositories(1)}
                         disabled={loading}
-                        className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors"
                     >
                         <RefreshCw
                             className={`w-4 h-4 ${
@@ -265,28 +267,28 @@ export const GitHubRepositorySelector = React.memo(
 
                 {/* Selected Repository Summary */}
                 {selectedRepo && !showRepositoryList && (
-                    <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                    <div className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <span className="font-medium text-blue-900">
+                                    <span className="font-medium text-blue-900 dark:text-blue-100">
                                         {selectedRepo.name}
                                     </span>
                                     {selectedRepo.private ? (
-                                        <Lock className="w-4 h-4 text-orange-500" />
+                                        <Lock className="w-4 h-4 text-orange-500 dark:text-orange-400" />
                                     ) : (
-                                        <Globe className="w-4 h-4 text-green-500" />
+                                        <Globe className="w-4 h-4 text-green-500 dark:text-green-400" />
                                     )}
                                 </div>
-                                <p className="text-sm text-blue-700 mb-1">
+                                <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">
                                     {selectedRepo.fullName}
                                 </p>
                                 {selectedRepo.description && (
-                                    <p className="text-xs text-blue-600 mb-2">
+                                    <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
                                         {selectedRepo.description}
                                     </p>
                                 )}
-                                <div className="flex items-center gap-4 text-xs text-blue-600">
+                                <div className="flex items-center gap-4 text-xs text-blue-600 dark:text-blue-400">
                                     {selectedRepo.language && (
                                         <span>{selectedRepo.language}</span>
                                     )}
@@ -300,7 +302,7 @@ export const GitHubRepositorySelector = React.memo(
                             </div>
                             <button
                                 onClick={() => setShowRepositoryList(true)}
-                                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium transition-colors"
                             >
                                 Change
                             </button>
@@ -313,66 +315,66 @@ export const GitHubRepositorySelector = React.memo(
                     <>
                         {/* Search */}
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                             <input
                                 type="text"
                                 placeholder="Search repositories..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                             />
                         </div>
 
                         {/* Repository List */}
-                        <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
+                        <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800">
                             {loading && repositories.length === 0 ? (
-                                <div className="p-4 text-center text-gray-500">
+                                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                                     Loading repositories...
                                 </div>
                             ) : filteredRepositories.length === 0 ? (
-                                <div className="p-4 text-center text-gray-500">
+                                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                                     No repositories found
                                 </div>
                             ) : (
-                                <div className="divide-y divide-gray-200">
+                                <div className="divide-y divide-gray-200 dark:divide-gray-700">
                                     {filteredRepositories.map((repo, index) => (
                                         <div
                                             key={`${repo.id}-${repo.fullName}-${index}`}
                                             onClick={() =>
                                                 handleRepositorySelect(repo)
                                             }
-                                            className={`p-3 cursor-pointer hover:bg-gray-50 ${
+                                            className={`p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                                                 selectedRepo?.id === repo.id
-                                                    ? "bg-blue-50 border-l-4 border-blue-500"
+                                                    ? "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400"
                                                     : ""
                                             }`}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="font-medium">
+                                                        <span className="font-medium text-gray-900 dark:text-white">
                                                             {repo.name}
                                                         </span>
                                                         {repo.private ? (
-                                                            <Lock className="w-4 h-4 text-orange-500" />
+                                                            <Lock className="w-4 h-4 text-orange-500 dark:text-orange-400" />
                                                         ) : (
-                                                            <Globe className="w-4 h-4 text-green-500" />
+                                                            <Globe className="w-4 h-4 text-green-500 dark:text-green-400" />
                                                         )}
                                                     </div>
-                                                    <p className="text-sm text-gray-600 truncate">
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                                                         {repo.fullName}
                                                     </p>
                                                     {repo.description && (
-                                                        <p className="text-xs text-gray-500 mt-1 truncate">
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
                                                             {repo.description}
                                                         </p>
                                                     )}
                                                 </div>
                                                 <div className="text-right">
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">
                                                         {repo.language}
                                                     </div>
-                                                    <div className="text-xs text-gray-400">
+                                                    <div className="text-xs text-gray-400 dark:text-gray-500">
                                                         {new Date(
                                                             repo.updatedAt
                                                         ).toLocaleDateString()}
@@ -393,7 +395,7 @@ export const GitHubRepositorySelector = React.memo(
                                     fetchRepositories(page + 1);
                                 }}
                                 disabled={loading}
-                                className="w-full py-2 text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                                className="w-full py-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-50 transition-colors"
                             >
                                 {loading ? "Loading..." : "Load More"}
                             </button>
@@ -403,10 +405,10 @@ export const GitHubRepositorySelector = React.memo(
 
                 {/* Branch Selection - Only show after repo is selected */}
                 {selectedRepo && branches.length > 0 && (
-                    <div className="border-t pt-4">
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <GitBranch className="w-4 h-4" />
-                            <label className="font-medium">
+                            <GitBranch className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                            <label className="font-medium text-gray-900 dark:text-white">
                                 Select Branch:
                             </label>
                         </div>
@@ -420,7 +422,7 @@ export const GitHubRepositorySelector = React.memo(
                                 });
                             }}
                             disabled={loadingBranches}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                         >
                             {branches.map((branch) => (
                                 <option key={branch.name} value={branch.name}>

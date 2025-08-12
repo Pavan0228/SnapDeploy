@@ -288,11 +288,11 @@ export function ProjectDetail() {
     if (!project) return null;
 
     return (
-        <div className="container mx-auto p-4 space-y-8">
+        <div className="w-full max-w-none p-4 space-y-8">
             {/* Project Header */}
             <div className="card p-8">
-                <div className="grid lg:grid-cols-2 gap-8">
-                    <div className="space-y-6">
+                <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 space-y-6">
                         <div className="flex items-center gap-4 mb-6">
                             <div className="p-3 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-xl shadow-lg">
                                 <Activity className="h-6 w-6 text-white" />
@@ -355,8 +355,8 @@ export function ProjectDetail() {
                     </div>
 
                     {previewUrl && isDeploymentCompleted && (
-                        <div className="relative group">
-                            <div className="relative h-[400px] rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700">
+                        <div className="lg:col-span-1 relative group">
+                            <div className="relative h-[500px] rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700">
                                 <iframe
                                     src={previewUrl}
                                     className={`w-full h-full border-0 transition-opacity duration-500 ${
@@ -397,8 +397,8 @@ export function ProjectDetail() {
 
                     {/* Deployment Status Indicator */}
                     {previewUrl && !isDeploymentCompleted && (
-                        <div className="relative group">
-                            <div className="relative h-[400px] rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                        <div className="lg:col-span-1 relative group">
+                            <div className="relative h-[500px] rounded-xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <div className="text-center">
                                         <div className="p-6 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-2xl shadow-lg mb-6 animate-pulse">
@@ -462,9 +462,9 @@ export function ProjectDetail() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="grid lg:grid-cols-4 gap-6">
                         {/* Phase Indicators */}
-                        <div className="flex flex-wrap items-center gap-4">
+                        <div className="lg:col-span-3 flex flex-wrap items-center gap-4">
                             <div
                                 className={`flex items-center space-x-2 px-4 py-3 rounded-xl transition-all ${
                                     [
@@ -552,35 +552,37 @@ export function ProjectDetail() {
                         </div>
 
                         {/* Overall Status */}
-                        <div
-                            className={`px-6 py-3 rounded-xl font-semibold border ${
-                                deploymentPhase === "completed"
-                                    ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-                                    : deploymentPhase === "failed"
-                                    ? "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-                                    : isStreaming
-                                    ? "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/20 dark:text-primary-400 dark:border-primary-800"
-                                    : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
-                            }`}
-                        >
-                            {deploymentPhase === "completed" &&
-                                "🎉 Deployed Successfully"}
-                            {deploymentPhase === "failed" &&
-                                "❌ Deployment Failed"}
-                            {deploymentPhase === "initializing" &&
-                                "🚀 Initializing..."}
-                            {deploymentPhase === "dependencies" &&
-                                "📦 Installing Dependencies..."}
-                            {deploymentPhase === "building" &&
-                                "🔨 Building Application..."}
-                            {deploymentPhase === "uploading" &&
-                                "☁️ Uploading to Cloud..."}
-                            {!deploymentPhase &&
-                                isStreaming &&
-                                "⏳ Starting Deployment..."}
-                            {!deploymentPhase &&
-                                !isStreaming &&
-                                "📋 Deployment Logs"}
+                        <div className="lg:col-span-1 flex justify-end">
+                            <div
+                                className={`px-6 py-3 rounded-xl font-semibold border w-full text-center ${
+                                    deploymentPhase === "completed"
+                                        ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                                        : deploymentPhase === "failed"
+                                        ? "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+                                        : isStreaming
+                                        ? "bg-primary-100 text-primary-800 border-primary-200 dark:bg-primary-900/20 dark:text-primary-400 dark:border-primary-800"
+                                        : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                                }`}
+                            >
+                                {deploymentPhase === "completed" &&
+                                    "🎉 Deployed Successfully"}
+                                {deploymentPhase === "failed" &&
+                                    "❌ Deployment Failed"}
+                                {deploymentPhase === "initializing" &&
+                                    "🚀 Initializing..."}
+                                {deploymentPhase === "dependencies" &&
+                                    "📦 Installing Dependencies..."}
+                                {deploymentPhase === "building" &&
+                                    "🔨 Building Application..."}
+                                {deploymentPhase === "uploading" &&
+                                    "☁️ Uploading to Cloud..."}
+                                {!deploymentPhase &&
+                                    isStreaming &&
+                                    "⏳ Starting Deployment..."}
+                                {!deploymentPhase &&
+                                    !isStreaming &&
+                                    "📋 Deployment Logs"}
+                            </div>
                         </div>
                     </div>
                 </div>
