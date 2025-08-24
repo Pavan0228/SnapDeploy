@@ -4,13 +4,13 @@ SnapDeploy is a modern, automated web application deployment platform that allow
 
 ![SnapDeploy Homepage](docs-homepage.png)
 
-> **Live Demo**: Experience SnapDeploy's lightning-fast deployments at [snapdeploy.example.com](https://snapdeploy.example.com)
+> **Live Demo**: Experience SnapDeploy's lightning-fast deployments at [snapdeploy.me](https://snapdeploy.me)
 
 ## 🌟 Key Features
 
 - **🔗 GitHub Integration**: Connect your GitHub account and deploy repositories directly
 - **⚡ Instant Deployment**: Deploy your applications in seconds with automated build pipelines
-- **🌐 Custom Subdomains**: Each project gets a unique subdomain (e.g., `your-project.snapdeploy.com`)
+- **🌐 Custom Subdomains**: Each project gets a unique subdomain (e.g., `your-project.snapdeploy.me`)
 - **🔒 Private Repository Support**: Deploy both public and private GitHub repositories
 - **📊 Real-time Logs**: Monitor your deployment progress with live build logs
 - **🔧 Environment Variables**: Configure custom environment variables for your projects
