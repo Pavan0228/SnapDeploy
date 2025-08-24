@@ -319,7 +319,6 @@ The application will be available at:
 ## 🔮 Future Enhancements
 
 - [ ] Custom domain support
-- [ ] Automatic SSL certificate management
 - [ ] Build caching for faster deployments
 - [ ] Team collaboration features
 - [ ] Deployment rollback functionality
